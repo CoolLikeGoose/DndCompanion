@@ -1,18 +1,28 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu/>
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+<div class="d-flex flex-column min-vh-100">
+    <header class="navbar navbar-expand-md navbar-light bg-light border-bottom">
+        <div class="container">
+            <a class="navbar-brand" href="/">DndCompanion</a>
+            <div class="ms-auto d-none d-md-flex gap-2">
+                <AuthorizeView>
+                    <Authorized>
+                        <span class="navbar-text me-2">Hello, @context.User.Identity?.Name</span>
+                        <form method="post" action="/auth/logout" class="d-inline">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
+                        </form>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a class="btn btn-outline-secondary btn-sm" href="/auth/login">Login</a>
+                        <a class="btn btn-primary btn-sm" href="/auth/register">Register</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
         </div>
+    </header>
 
-        <article class="content px-4">
-            @Body
-        </article>
+    <main class="container py-3 flex-grow-1 pb-mobile-nav">
+        @Body
     </main>
 </div>
 

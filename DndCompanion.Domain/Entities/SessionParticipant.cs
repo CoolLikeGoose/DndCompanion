@@ -1,6 +1,6 @@
 ﻿namespace Domain.Entities;
 
-public class Resource
+public class SessionParticipant
 {
     
 }

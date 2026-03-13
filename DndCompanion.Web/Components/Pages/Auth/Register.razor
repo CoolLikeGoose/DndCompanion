@@ -1,0 +1,120 @@
+﻿@page "/auth/register"
+@using System.ComponentModel.DataAnnotations
+@using DndCompanion.Application.Features.Auth.Register
+@inject RegisterUserService RegisterUserService
+
+<PageTitle>Registration</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <h1 class="mb-2">Registration</h1>
+        <p class="text-muted mb-4">Create account to save characters between sessions</p>
+        
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="alert alert-danger">
+                @_errorMessage
+            </div>
+        }
+        
+        @if (_isSuccess)
+        {
+            <div class="alert alert-success" role="alert">
+                Registration successful!
+            </div>
+            
+            <div class="d-flex flex-column flex-sm-row gap-2">
+                <a href="/auth/login" class="btn btn-primary">Login</a>
+                <a href="/" class="btn btn-outline-secondary">Home</a>
+            </div>
+        }
+        else
+        {
+            <EditForm FormName="register" Model="_model" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator/>
+                <ValidationSummary/>
+                
+                <div class="mb-3">
+                    <label class="form-label" for="userName">User name</label>
+                    <InputText id="userName" class="form-control" @bind-Value="_model.UserName"/>
+                    <ValidationMessage For="() => _model.UserName"/>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label" for="email">Email</label>
+                    <InputText id="email" type="email" class="form-control" @bind-Value="_model.Email"/>
+                    <ValidationMessage For="() => _model.Email"/>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label" for="password">Password</label>
+                    <InputText id="password" type="password" class="form-control" @bind-Value="_model.Password"/>
+                    <ValidationMessage For="() => _model.Password"/>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label" for="confirmPassword">Password confirm</label>
+                    <InputText id="confirmPassword" type="password" class="form-control" @bind-Value="_model.ConfirmPassword"/>
+                    <ValidationMessage For="() => _model.ConfirmPassword"/>
+                </div>
+                
+                <div class="d-flex flex-column flex-sm-row gap-2">
+                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">
+                        @(_isSubmitting ? "Registering..." : "Register")
+                    </button>
+                    
+                    <a class="btn btn-outline-secondary" href="/">Cancel</a>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    
+    private readonly RegisterFormModel _model = new();
+    private bool _isSubmitting;
+    private bool _isSuccess;
+    private string? _errorMessage;
+
+    private async Task HandleSubmit()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        var result = await RegisterUserService.ExecuteAsync(new RegisterUserCommand(
+            _model.UserName,
+            _model.Email,
+            _model.Password,
+            _model.ConfirmPassword));
+
+        _isSubmitting = false;
+
+        if (!result.IsSuccess)
+        {
+            _errorMessage = result.ErrorMessage;
+            return;
+        }
+
+        _isSuccess = true;
+    }
+
+    private sealed class RegisterFormModel
+    {
+        [Required(ErrorMessage = "Enter user name")]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "Name must contain 3-50 characters")]
+        public string UserName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Enter email address")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Enter password")]
+        [MinLength(1, ErrorMessage = "Password must be at least 1 symbol")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Confirm password")]
+        [Compare(nameof(Password), ErrorMessage = "Passwords didnt match")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

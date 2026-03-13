@@ -1,4 +1,4 @@
-namespace Tests;
+namespace DndCompanion.Infrastructure.Tests;
 
 public class UnitTest1
 {

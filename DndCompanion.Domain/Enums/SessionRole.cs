@@ -1,6 +1,6 @@
 ﻿namespace Domain.Enums;
 
-public enum ResourceType
+public enum SessionRole
 {
     
 }
