@@ -12,8 +12,6 @@
 
     <ItemGroup>
       <Folder Include="DTO\" />
-      <Folder Include="Features\Sessions\CreateSession\" />
-      <Folder Include="Features\Sessions\JoinSession\" />
       <Folder Include="Features\Sessions\PromoteToCoMaster\" />
       <Folder Include="Services\" />
     </ItemGroup>

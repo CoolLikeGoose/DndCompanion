@@ -2,5 +2,64 @@
 
 <PageTitle>Join session</PageTitle>
 
-<h1>Join session</h1>
-<p class="text-muted">TODO: join session</p>
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <h1 class="mb-2">Join session</h1>
+        <p class="text-muted mb-4">Enter invite code and your display name.</p>
+        
+        @if (Created == "1")
+        {
+            <div class="alert alert-success" role="alert">
+                Session created.
+                <br/>
+                Invite code: <strong>@InviteCode</strong>
+                @if (!string.IsNullOrWhiteSpace(PinCode))
+                {
+                    <br/>
+                    <div>Pin code: <strong>@PinCode</strong></div>
+                }
+            </div>
+        }
+        
+        @if (!string.IsNullOrWhiteSpace(Error))
+        {
+            <div class="alert alert-danger" role="alert">@Error</div>
+        }
+        
+        <form method="post" action="/sessions/join">
+            <div class="mb-3">
+                <label for="inviteCode" class="form-label">Invite code</label>
+                <input class="form-control" id="inviteCode" name="inviteCode" value="@InviteCode" required />
+            </div>
+            
+            <div class="mb-3">
+                <label for="displayName" class="form-label">Display name</label>
+                <input class="form-control" id="displayName" name="displayName" required />
+            </div>
+            
+            <div class="mb-3">
+                <label for="pinCode" class="form-label">Pin code (if required)</label>
+                <input class="form-control" id="pinCode" name="pinCode" value="@PinCode" />
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Join</button>
+                <a href="/" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "created")]
+    public string? Created { get; set; }
+    
+    [SupplyParameterFromQuery(Name = "error")]
+    public string? Error { get; set; }
+    
+    [SupplyParameterFromQuery(Name = "inviteCode")]
+    public string? InviteCode { get; set; }
+    
+    [SupplyParameterFromQuery(Name = "pinCode")]
+    public string? PinCode { get; set; }
+}

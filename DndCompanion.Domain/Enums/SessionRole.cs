@@ -2,5 +2,6 @@
 
 public enum SessionRole
 {
-    
+    Player = 1,
+    Master
 }

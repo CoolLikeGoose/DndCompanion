@@ -2,5 +2,36 @@
 
 <PageTitle>Create session</PageTitle>
 
-<h1>Create session</h1>
-<p class="text-muted">TODO: create session</p>
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <h1 class="mb-2">Create session</h1>
+        <p class="text-muted mb-4">Master can create session with or without account.</p>
+        
+        @if (!string.IsNullOrWhiteSpace(Error))
+        {
+            <div class="alert alert-danger" role="alert">@Error</div>
+        }
+        
+        <form method="post" action="/sessions/create">
+            <div class="mb-3">
+                <label for="masterDisplayName" class="form-label">Master name (if you dont have an account)</label>
+                <input class="form-control" id="masterDisplayName" name="masterDisplayName" required />
+            </div>
+            
+            <div class="mb-3">
+                <label for="pinCode" class="form-label">Pin code (optional, 4-8 chars)</label>
+                <input class="form-control" id="pinCode" name="pinCode" />
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Create session</button>
+                <a class="btn btn-secondary" href="/">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "error")]
+    public string? Error { get; set; }
+}
