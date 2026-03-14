@@ -24,5 +24,11 @@ public sealed class SessionParticipantConfiguration : IEntityTypeConfiguration<S
             .IsRequired();
 
         builder.HasIndex(x => x.SessionId);
+        
+        builder.HasOne(x => x.Character)
+            .WithMany()
+            .HasForeignKey(x => x.CharacterId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
     }
 }

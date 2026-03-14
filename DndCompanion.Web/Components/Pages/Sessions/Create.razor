@@ -1,4 +1,5 @@
 ﻿@page "/sessions/create"
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Create session</PageTitle>
 
@@ -13,14 +14,25 @@
         }
         
         <form method="post" action="/sessions/create">
-            <div class="mb-3">
-                <label for="masterDisplayName" class="form-label">Master name (if you dont have an account)</label>
-                <input class="form-control" id="masterDisplayName" name="masterDisplayName" required />
-            </div>
+            @if (!_isAuthenticated)
+            {
+                <div class="mb-3">
+                    <label for="masterDisplayName" class="form-label">Master name</label>
+                    <input class="form-control" id="masterDisplayName" name="masterDisplayName" required />
+                </div>
+            }
+            else
+            {
+                <div class="mb-3">
+                    <label class="form-label">Master name</label>
+                    <input class="form-control" value="@_userName" disabled />
+                </div>
+            }
             
             <div class="mb-3">
+                @* TODO: fix pin code (user cant join session with pin code) *@
                 <label for="pinCode" class="form-label">Pin code (optional, 4-8 chars)</label>
-                <input class="form-control" id="pinCode" name="pinCode" />
+                <input class="form-control" id="pinCode" name="pinCode"/>
             </div>
             
             <div class="d-flex gap-2">
@@ -32,6 +44,16 @@
 </div>
 
 @code {
+    private bool _isAuthenticated;
+    private string _userName = "Account user";
+
     [SupplyParameterFromQuery(Name = "error")]
     public string? Error { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+        _userName = authState.User.Identity?.Name ?? _userName;
+    }
 }

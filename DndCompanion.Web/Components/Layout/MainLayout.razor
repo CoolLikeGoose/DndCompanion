@@ -1,10 +1,22 @@
-﻿@inherits LayoutComponentBase
+﻿@using DndCompanion.Application.Abstractions.Persistence
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.WebUtilities
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject ISessionRepository SessionRepository
+@inject NavigationManager NavigationManager
 
 <div class="d-flex flex-column min-vh-100">
     <header class="navbar navbar-expand-md navbar-light bg-light border-bottom">
         <div class="container">
-            <a class="navbar-brand" href="/">DndCompanion</a>
-            <div class="d-none d-md-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-0">
+                <a class="navbar-brand" href="/">DndCompanion</a>
+                @if (InviteCode is not null)
+                {
+                    <span class="badge bg-secondary">@InviteCode</span>
+                }
+            </div>
+            <div class="d-md-flex align-items-center gap-2">
                 <AuthorizeView>
                     <Authorized>
                         <span class="navbar-text me-2">Hello, @context.User.Identity?.Name</span>
@@ -31,3 +43,53 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    private const string ParticipantQueryKey = "participantId";
+
+    public string? InviteCode { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+        await RefreshInviteCodeAsync(NavigationManager.Uri);
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _ = RefreshInviteCodeAndStateAsync(e.Location);
+    }
+
+    private async Task RefreshInviteCodeAndStateAsync(string absoluteUri)
+    {
+        await RefreshInviteCodeAsync(absoluteUri);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshInviteCodeAsync(string absoluteUri)
+    {
+        InviteCode = null;
+
+        var uri = NavigationManager.ToAbsoluteUri(absoluteUri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (!query.TryGetValue(ParticipantQueryKey, out var participantIdRaw))
+            return;
+
+        if (!Guid.TryParse(participantIdRaw.ToString(), out var participantId))
+            return;
+
+        var participant = await SessionRepository.FindParticipantByIdAsync(participantId);
+        if (participant is null)
+            return;
+
+        var session = await SessionRepository.FindByIdAsync(participant.SessionId);
+        if (session is not null)
+            InviteCode = session.InviteCode.Value;
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

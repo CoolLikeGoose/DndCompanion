@@ -1,0 +1,108 @@
+﻿@page "/sessions/{SessionId:guid}"
+@using DndCompanion.Application.Abstractions.Persistence
+@using Domain.Enums
+@inject ISessionRepository SessionRepository
+
+<PageTitle>Session</PageTitle>
+
+@if (_loadFailed)
+{
+    <div class="alert alert-danger">Invalid session participant link.</div>
+}
+else if (_participant is null)
+{
+    <p class="text-muted">Loading...</p>
+}
+else if (_participant.Character is null)
+{
+    @if (_participant.Role == SessionRole.Master)
+    {
+        <div class="alert alert-info">
+            You are in this session as master. Character selection is optional for master role.
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            No character selected.
+            <a href="/sessions/@SessionId/lobby?participantId=@ParticipantId" class="alert-link">
+                Go back to lobby
+            </a>
+        </div>
+    }
+}
+else
+{
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+            
+            @* Character card *@
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div>
+                            <h2 class="mb-0">@_participant.Character.Name</h2>
+                            <span class="badge bg-secondary">@_participant.Role</span>
+                        </div>
+                    </div>
+                    
+                    @* Placeholder for info *@
+                    <div class="row g-3">
+                        <div class="col-6 col-md-3">
+                            <div class="card text-center bg-light">
+                                <div class="card-body py-3">
+                                    <div class="fs-4 fw-bold text-muted">—</div>
+                                    <div class="small text-muted">HP</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card text-center bg-light">
+                                <div class="card-body py-3">
+                                    <div class="fs-4 fw-bold text-muted">—</div>
+                                    <div class="small text-muted">Gold</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card text-center bg-light">
+                                <div class="card-body py-3">
+                                    <div class="fs-4 fw-bold text-muted">—</div>
+                                    <div class="small text-muted">Spell Slots</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="card text-center bg-light">
+                                <div class="card-body py-3">
+                                    <div class="fs-4 fw-bold text-muted">—</div>
+                                    <div class="small text-muted">Abilities</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid SessionId { get; set; }
+    [SupplyParameterFromQuery(Name = "participantId")] public Guid ParticipantId { get; set; }
+
+    private Domain.Entities.SessionParticipant? _participant;
+    private bool _loadFailed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loadFailed = false;
+        _participant = await SessionRepository.FindParticipantByIdAsync(ParticipantId);
+        if (_participant is not null && _participant.SessionId != SessionId)
+        {
+            _participant = null;
+            _loadFailed = true;
+        }
+    }
+
+}

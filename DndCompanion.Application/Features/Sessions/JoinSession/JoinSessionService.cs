@@ -20,8 +20,12 @@ public sealed class JoinSessionService
     {
         if (string.IsNullOrWhiteSpace(command.InviteCode))
             return new JoinSessionResult(false, "Invite code is required");
-        
-        if (string.IsNullOrWhiteSpace(command.DisplayName))
+
+        var displayName = _currentUser.IsAuthenticated
+            ? _currentUser.UserName
+            : command.DisplayName;
+
+        if (string.IsNullOrWhiteSpace(displayName))
             return new JoinSessionResult(false, "Display name is required");
 
         var session = await _sessionRepository.FindByInviteCodeAsync(command.InviteCode, cancellationToken);
@@ -43,7 +47,10 @@ public sealed class JoinSessionService
 
         try
         {
-            var participant = session.Join(command.DisplayName, _currentUser.UserId, pinCode);
+            var participant = session.Join(displayName, _currentUser.UserId, pinCode);
+
+            if (_currentUser.UserId is { } currentUserId)
+                await _sessionRepository.RemoveParticipantsByUserIdAsync(currentUserId, session.Id, cancellationToken);
             
             await _sessionRepository.AddParticipantAsync(participant, cancellationToken);
             await _sessionRepository.SaveChangesAsync(cancellationToken);

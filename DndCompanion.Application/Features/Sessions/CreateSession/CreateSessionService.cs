@@ -47,6 +47,9 @@ public sealed class CreateSessionService
             return new CreateSessionResult(false, e.Message);
         }
 
+        if (_currentUser.UserId is { } currentUserId)
+            await _sessionRepository.RemoveParticipantsByUserIdAsync(currentUserId, cancellationToken: cancellationToken);
+
         await _sessionRepository.AddAsync(session, cancellationToken);
         await _sessionRepository.SaveChangesAsync(cancellationToken);
         
@@ -54,6 +57,7 @@ public sealed class CreateSessionService
             true, 
             null, 
             session.Id, 
+            session.Participants.FirstOrDefault()?.Id,
             session.InviteCode.Value,
             session.PinCode?.Value);
     }

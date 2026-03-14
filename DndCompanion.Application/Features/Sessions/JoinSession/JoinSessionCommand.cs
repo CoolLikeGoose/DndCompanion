@@ -2,5 +2,5 @@
 
 public sealed record JoinSessionCommand(
     string InviteCode,
-    string DisplayName,
+    string? DisplayName,
     string? PinCode);

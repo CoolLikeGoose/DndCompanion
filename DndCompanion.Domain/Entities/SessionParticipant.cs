@@ -15,6 +15,10 @@ public class SessionParticipant
     public string DisplayName { get; private set; } = null!;
     public SessionRole Role { get; private set; }
     public DateTime JoinedAt { get; private set; }
+    
+    // Current character
+    public Guid? CharacterId { get; private set; }
+    public Character? Character { get; private set; }
 
     public static SessionParticipant Create(Guid sessionId, Guid? userId, string displayName, SessionRole role)
     {
@@ -37,5 +41,13 @@ public class SessionParticipant
             Role = role,
             JoinedAt = DateTime.UtcNow
         };
+    }
+
+    public void AssignCharacter(Guid characterId)
+    {
+        if (characterId == Guid.Empty)
+            throw new ArgumentException("Character id is required", nameof(characterId));
+        
+        CharacterId = characterId;
     }
 }

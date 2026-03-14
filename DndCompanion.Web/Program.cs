@@ -3,6 +3,8 @@ using DndCompanion.Application.Abstractions.Identity;
 using DndCompanion.Application.Abstractions.Persistence;
 using DndCompanion.Application.Features.Auth.Login;
 using DndCompanion.Application.Features.Auth.Register;
+using DndCompanion.Application.Features.Characters.CreateCharacter;
+using DndCompanion.Application.Features.Characters.SelectCharacter;
 using DndCompanion.Application.Features.Sessions.CreateSession;
 using DndCompanion.Application.Features.Sessions.JoinSession;
 using Infrastructure.Identity;
@@ -45,7 +47,14 @@ builder.Services.AddScoped<ISessionRepository, SessionRepository>();
 builder.Services.AddScoped<CreateSessionService>();
 builder.Services.AddScoped<JoinSessionService>();
 
+builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
+builder.Services.AddScoped<CreateCharacterService>();
+builder.Services.AddScoped<SelectCharacterService>();
+
 var app = builder.Build();
+
+const string LastSessionIdCookie = "dnd.lastSessionId";
+const string LastParticipantIdCookie = "dnd.lastParticipantId";
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -102,14 +111,15 @@ app.MapPost("/auth/login", async (
 app.MapPost("/auth/logout", async (HttpContext httpContext) =>
 {
     await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    ClearLastSessionCookies(httpContext);
     return Results.Redirect("/");
     
 }).DisableAntiforgery();
 
-app.MapPost("sessions/create", async (
-    HttpContext HttpContext,
+app.MapPost("/sessions/create", async (
+    HttpContext httpContext,
     [FromForm] string? masterDisplayName,
-    [FromForm] string pinCode,
+    [FromForm] string? pinCode,
     CreateSessionService createSessionService) =>
 {
     var result = await createSessionService.ExecuteAsync(new CreateSessionCommand(masterDisplayName, pinCode));
@@ -120,6 +130,12 @@ app.MapPost("sessions/create", async (
         return Results.Redirect($"/sessions/create?error={error}");
     }
 
+    if (result.SessionId is { } createdSessionId && result.ParticipantId is { } createdParticipantId)
+    {
+        SaveLastSessionCookies(httpContext, createdSessionId, createdParticipantId);
+        return Results.Redirect($"/sessions/{createdSessionId}?participantId={createdParticipantId}");
+    }
+
     var invite = Uri.EscapeDataString(result.InviteCode ?? string.Empty);
     var pin = Uri.EscapeDataString(result.PinCode ?? string.Empty);
 
@@ -127,8 +143,9 @@ app.MapPost("sessions/create", async (
 }).DisableAntiforgery();
 
 app.MapPost("/sessions/join", async (
+    HttpContext httpContext,
     [FromForm] string inviteCode,
-    [FromForm] string displayName,
+    [FromForm] string? displayName,
     [FromForm] string? pinCode,
     JoinSessionService joinSessionService) =>
 {
@@ -140,8 +157,49 @@ app.MapPost("/sessions/join", async (
         return Results.Redirect($"/sessions/join?error={error}&inviteCode={Uri.EscapeDataString(inviteCode)}");
     }
     
-    //TODO: Implement redirect to session page
-    return Results.Redirect("/");
+    var sessionIdValue = result.SessionId!.Value;
+    var participantIdValue = result.ParticipantId!.Value;
+
+    SaveLastSessionCookies(httpContext, sessionIdValue, participantIdValue);
+
+    var sessionId = Uri.EscapeDataString(sessionIdValue.ToString());
+    var participantId = Uri.EscapeDataString(participantIdValue.ToString());
+    
+    return Results.Redirect($"/sessions/{sessionId}/lobby?participantId={participantId}");
 }).DisableAntiforgery();
+
+app.MapGet("/sessions/resume", (HttpContext httpContext) =>
+{
+    var sessionIdRaw = httpContext.Request.Cookies[LastSessionIdCookie];
+    var participantIdRaw = httpContext.Request.Cookies[LastParticipantIdCookie];
+
+    if (!Guid.TryParse(sessionIdRaw, out var sessionId) || !Guid.TryParse(participantIdRaw, out var participantId))
+    {
+        ClearLastSessionCookies(httpContext);
+        return Results.Redirect("/");
+    }
+
+    return Results.Redirect($"/sessions/{sessionId}?participantId={participantId}");
+});
+
+void SaveLastSessionCookies(HttpContext httpContext, Guid sessionId, Guid participantId)
+{
+    var options = new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = !app.Environment.IsDevelopment(),
+        SameSite = SameSiteMode.Lax,
+        Expires = DateTimeOffset.UtcNow.AddDays(7)
+    };
+
+    httpContext.Response.Cookies.Append(LastSessionIdCookie, sessionId.ToString(), options);
+    httpContext.Response.Cookies.Append(LastParticipantIdCookie, participantId.ToString(), options);
+}
+
+void ClearLastSessionCookies(HttpContext httpContext)
+{
+    httpContext.Response.Cookies.Delete(LastSessionIdCookie);
+    httpContext.Response.Cookies.Delete(LastParticipantIdCookie);
+}
 
 app.Run();
