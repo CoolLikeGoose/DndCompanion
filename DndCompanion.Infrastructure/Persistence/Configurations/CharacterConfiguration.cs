@@ -21,5 +21,10 @@ public sealed class CharacterConfiguration : IEntityTypeConfiguration<Character>
             .IsRequired();
         
         builder.HasIndex(x => x.UserId);
+        
+        builder.HasMany(x => x.Resources)
+            .WithOne()
+            .HasForeignKey(x => x.CharacterId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

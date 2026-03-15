@@ -4,6 +4,10 @@ using DndCompanion.Application.Abstractions.Persistence;
 using DndCompanion.Application.Features.Auth.Login;
 using DndCompanion.Application.Features.Auth.Register;
 using DndCompanion.Application.Features.Characters.CreateCharacter;
+using DndCompanion.Application.Features.Characters.Resources.ApplyRest;
+using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource;
+using DndCompanion.Application.Features.Characters.Resources.SetCharacterResource;
+using DndCompanion.Application.Features.Characters.Resources.SetCharacterResourceMax;
 using DndCompanion.Application.Features.Characters.SelectCharacter;
 using DndCompanion.Application.Features.Sessions.CreateSession;
 using DndCompanion.Application.Features.Sessions.JoinSession;
@@ -50,6 +54,12 @@ builder.Services.AddScoped<JoinSessionService>();
 builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
 builder.Services.AddScoped<CreateCharacterService>();
 builder.Services.AddScoped<SelectCharacterService>();
+
+builder.Services.AddScoped<ChangeCharacterResourceService>();
+builder.Services.AddScoped<SetCharacterResourceService>();
+builder.Services.AddScoped<SetCharacterResourceMaxService>();
+builder.Services.AddScoped<ApplyRestService>();
+
 
 var app = builder.Build();
 

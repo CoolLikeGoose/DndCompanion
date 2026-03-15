@@ -1,6 +1,7 @@
 ﻿using DndCompanion.Application.Abstractions.Identity;
 using DndCompanion.Application.Abstractions.Persistence;
 using Domain.Entities;
+using Domain.Enums;
 
 namespace DndCompanion.Application.Features.Characters.CreateCharacter;
 
@@ -31,6 +32,9 @@ public sealed class CreateCharacterService
         try
         {
             character = Character.Create(command.Name, _currentUser.UserId);
+            character.AddResource(ResourceType.HitPoints, 1, RecoveryType.LongRest);
+            character.AddResource(ResourceType.HitDice, 1, RecoveryType.LongRest);
+            
         }
         catch (ArgumentException e)
         {

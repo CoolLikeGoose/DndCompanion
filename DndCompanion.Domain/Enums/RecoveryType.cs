@@ -2,5 +2,7 @@
 
 public enum RecoveryType
 {
-    
+    None,
+    ShortRest,
+    LongRest
 }

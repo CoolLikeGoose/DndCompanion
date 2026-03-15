@@ -40,6 +40,7 @@ public sealed class SessionRepository : ISessionRepository
     {
         return await _dbContext.SessionParticipants
             .Include(x => x.Character)
+            .ThenInclude(x => x!.Resources)
             .FirstOrDefaultAsync(x => x.Id == participantId, cancellationToken);
     }
 
