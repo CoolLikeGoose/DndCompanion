@@ -1,0 +1,26 @@
+﻿@inject NavigationManager Nav
+
+<nav class="fixed-bottom bg-white border-top py-2">
+    <div class="d-flex justify-content-around">
+        <a href="/sessions/@SessionId/character?participantId=@ParticipantId" 
+           class="btn @(IsActive("character") ? "btn-primary" : "btn-outline-secondary")">
+            Character
+        </a>
+        <a href="/sessions/@SessionId/inventory?participantId=@ParticipantId" 
+           class="btn @(IsActive("inventory") ? "btn-primary" : "btn-outline-secondary")">
+            Inventory
+        </a>
+        <a href="/sessions/@SessionId/battlelog?participantId=@ParticipantId" 
+           class="btn @(IsActive("battlelog") ? "btn-primary" : "btn-outline-secondary")">
+            Battle Log
+        </a>
+    </div>
+</nav>
+
+@code {
+    [Parameter] public Guid SessionId { get; set; }
+    [Parameter] public Guid ParticipantId { get; set; }
+    
+    private bool IsActive(string segment) => 
+        Nav.Uri.Contains($"/sessions/{SessionId}/{segment}", StringComparison.OrdinalIgnoreCase);
+}

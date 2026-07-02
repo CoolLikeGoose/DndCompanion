@@ -1,0 +1,342 @@
+﻿@page "/sessions/{SessionId:guid}/character"
+@using DndCompanion.Application.Abstractions.Persistence
+@using DndCompanion.Application.Features.Characters.Resources.ApplyRest
+@using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource
+@using DndCompanion.Application.Features.Characters.Resources.SetCharacterResource
+@using DndCompanion.Application.Features.Characters.Resources.SetCharacterResourceMax
+@using Web.Components.Shared
+@using Domain.Entities
+@using Domain.Enums
+
+@inject ISessionRepository SessionRepository
+@inject ChangeCharacterResourceService ChangeCharacterResourceService
+@inject SetCharacterResourceService SetCharacterResourceService
+@inject SetCharacterResourceMaxService SetCharacterResourceMaxService
+@inject ApplyRestService ApplyRestService
+
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div>
+                            <h2 class="mb-0">@_participant.Character.Name</h2>
+                            <span class="badge bg-secondary">@_participant.Role</span>
+                        </div>
+                        <div class="ms-auto">
+                            <button class="btn btn-primary" @onclick="ApplyLongRest" disabled="@_isBusy">Long Rest</button>
+                            <button class="btn btn-primary" @onclick="() => _globalEdit = !_globalEdit">
+                                @(_globalEdit ? "Cancel" : "Edit stats")
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_resourceError))
+                    {
+                        <div class="alert alert-danger" role="alert">@_resourceError</div>
+                    }
+
+                    @* Core resources *@
+                    <div class="row g-3"> 
+                        <div class="col-12 col-md-6">
+                            <div class="card bg-light h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="mb-0">Core resources</h5>
+                                        <span class="badge bg-dark">Live</span>
+                                    </div>
+                                    
+                                    <ResourceCard 
+                                        Label="Hit Points"
+                                        Value="@FormatResource(ResourceType.HitPoints, null)"
+                                        IsGlobalEditMode="_globalEdit"
+                                        Disabled="_isBusy"
+                                        OnEditClick='() => OpenEditor(ResourceType.HitPoints, null, "Hit Points")'/>
+                                    
+                                    <ResourceCard 
+                                        Label="Hit Dice"
+                                        Value="@FormatResource(ResourceType.HitDice, null)"
+                                        Disabled="_isBusy"
+                                        IsGlobalEditMode="_globalEdit"
+                                        OnEditClick='() => OpenEditor(ResourceType.HitDice, null, "Hit Dice")'/>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        @* Spell slots *@
+                        <div class="col-12 col-md-6">
+                            <div class="card text-center bg-light">
+                                <div class="card-body py-3">
+                                    @for (var level = 1; level <= 9; level++)
+                                    {
+                                        var currentLevel = level;
+                                        
+                                        <ResourceCard
+                                            Label="@($"Spell Slot L{currentLevel}")"
+                                            Value="@FormatResource(ResourceType.SpellSlot, currentLevel)"
+                                            Disabled="_isBusy"
+                                            IsGlobalEditMode="_globalEdit"
+                                            OnEditClick='() => OpenEditor(ResourceType.SpellSlot, currentLevel, $"Spell Slot L{currentLevel}")'/>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        @* Abilities *@
+                        <div class="col-6 col-md-3">
+                            <div class="card text-center bg-light">
+                                <div class="card-body py-3">
+                                    <div class="fs-4 fw-bold text-muted">—</div>
+                                    <div class="small text-muted">Abilities</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+@* editor modal *@
+@if (_editorOpen)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit @_selectedResourceLabel</h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditor"></button>
+                </div>
+
+                <div class="modal-body">
+                    @if (_globalEdit)
+                    {
+                        <div class="input-group">
+                            <input type="number" class="form-control" @bind="_setMaxValue" />
+                            <button class="btn btn-secondary" @onclick="ApplySetMax" disabled="@_isBusy">Set max</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                        <span class="small text-muted">Current</span>
+                        <div class="fs-5 fw-bold">@FormatResource(_selectedResourceType, _selectedVariant)</div>
+                    </div>
+
+                    <div class="btn-group mb-3" role="group">
+                        <button class="btn btn-outline-primary @( _editMode == EditMode.Change ? "active" : string.Empty)"
+                                @onclick="() => _editMode = EditMode.Change">
+                            Change
+                        </button>
+                        <button class="btn btn-outline-primary @( _editMode == EditMode.Set ? "active" : string.Empty)"
+                                @onclick="() => _editMode = EditMode.Set">
+                            Set
+                        </button>
+                    </div>
+
+                    @if (_editMode == EditMode.Change)
+                    {
+                        <div class="mb-2 d-flex flex-wrap gap-2">
+                            <button class="btn btn-outline-danger" @onclick="() => QuickChange(-10)" disabled="@_isBusy">-10</button>
+                            <button class="btn btn-outline-danger" @onclick="() => QuickChange(-5)" disabled="@_isBusy">-5</button>
+                            <button class="btn btn-outline-danger" @onclick="() => QuickChange(-1)" disabled="@_isBusy">-1</button>
+                            <button class="btn btn-outline-success" @onclick="() => QuickChange(1)" disabled="@_isBusy">+1</button>
+                            <button class="btn btn-outline-success" @onclick="() => QuickChange(5)" disabled="@_isBusy">+5</button>
+                            <button class="btn btn-outline-success" @onclick="() => QuickChange(10)" disabled="@_isBusy">+10</button>
+                        </div>
+
+                        <div class="input-group">
+                            <input type="number" class="form-control" @bind="_changeDelta" />
+                            <button class="btn btn-primary" @onclick="ApplyChangeDelta" disabled="@_isBusy">Apply</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="input-group mb-2">
+                            <input type="number" class="form-control" @bind="_setCurrentValue" />
+                            <button class="btn btn-primary" @onclick="ApplySetCurrent" disabled="@_isBusy">Set current</button>
+                        </div>
+                    }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+<SessionNavBar SessionId="SessionId" ParticipantId="ParticipantId"/>
+
+@code {
+    [Parameter] public Guid SessionId { get; set; }
+    [SupplyParameterFromQuery(Name = "participantId")] public Guid ParticipantId { get; set; }
+
+    private SessionParticipant? _participant;
+    private bool _loadFailed;
+    private bool _isBusy;
+    private string? _resourceError;
+
+    private bool _editorOpen;
+    private ResourceType _selectedResourceType;
+    private int? _selectedVariant;
+    private string _selectedResourceLabel = string.Empty;
+
+    private EditMode _editMode = EditMode.Change;
+    private bool _globalEdit = false;
+    private int _changeDelta = 1;
+    private int _setCurrentValue;
+    private int _setMaxValue;
+
+    private enum EditMode
+    {
+        Change,
+        Set
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadParticipantAsync();
+    }
+
+    private async Task ReloadParticipantAsync()
+    {
+        _loadFailed = false;
+        _participant = await SessionRepository.FindParticipantByIdAsync(ParticipantId);
+
+        if (_participant is not null && _participant.SessionId != SessionId)
+        {
+            _participant = null;
+            _loadFailed = true;
+        }
+
+        _resourceError = null;
+    }
+
+    private string FormatResource(ResourceType type, int? variant)
+    {
+        var resource = FindResource(type, variant);
+        return resource is null ? "- / -" : $"{resource.CurrentValue}/{resource.MaxValue}";
+    }
+
+    private Resource? FindResource(ResourceType type, int? variant)
+    {
+        return _participant?.Character?.Resources
+            .FirstOrDefault(x => x.Type == type && x.Variant == variant);
+    }
+
+    private void OpenEditor(ResourceType type, int? variant, string label)
+    {
+        var resource = FindResource(type, variant);
+        if (resource is null)
+        {
+            _resourceError = $"{label} resource is not initialized yet.";
+            return;
+        }
+
+        _selectedResourceType = type;
+        _selectedVariant = variant;
+        _selectedResourceLabel = label;
+        _changeDelta = 1;
+        _setCurrentValue = resource.CurrentValue;
+        _setMaxValue = resource.MaxValue;
+        _editMode = EditMode.Change;
+        _editorOpen = true;
+        _resourceError = null;
+    }
+
+    private void CloseEditor()
+    {
+        _editorOpen = false;
+        _resourceError = null;
+    }
+
+    private Task QuickChange(int delta)
+    {
+        return ExecuteChangeAsync(delta);
+    }
+
+    private Task ApplyChangeDelta()
+    {
+        return ExecuteChangeAsync(_changeDelta);
+    }
+
+    private async Task ExecuteChangeAsync(int delta)
+    {
+        _isBusy = true;
+        _resourceError = null;
+
+        var result = await ChangeCharacterResourceService.ExecuteAsync(
+            new ChangeCharacterResourceCommand(ParticipantId, _selectedResourceType, _selectedVariant, delta));
+
+        _isBusy = false;
+
+        if (!result.IsSuccess)
+        {
+            _resourceError = result.ErrorMessage;
+            return;
+        }
+
+        await ReloadParticipantAsync();
+    }
+
+    private async Task ApplySetCurrent()
+    {
+        _isBusy = true;
+        _resourceError = null;
+
+        var result = await SetCharacterResourceService.ExecuteAsync(
+            new SetCharacterResourceCommand(ParticipantId, _selectedResourceType, _selectedVariant, _setCurrentValue));
+
+        _isBusy = false;
+
+        if (!result.IsSuccess)
+        {
+            _resourceError = result.ErrorMessage;
+            return;
+        }
+
+        await ReloadParticipantAsync();
+    }
+
+    private async Task ApplySetMax()
+    {
+        _isBusy = true;
+        _resourceError = null;
+
+        var result = await SetCharacterResourceMaxService.ExecuteAsync(
+            new SetCharacterResourceMaxCommand(ParticipantId, _selectedResourceType, _selectedVariant, _setMaxValue));
+
+        _isBusy = false;
+
+        if (!result.IsSuccess)
+        {
+            _resourceError = result.ErrorMessage;
+            return;
+        }
+
+        await ReloadParticipantAsync();
+        CloseEditor();
+    }
+    
+    private async Task ApplyLongRest()
+    {
+        _isBusy = true;
+        _resourceError = null;
+
+        var result = await ApplyRestService.ExecuteAsync(
+            new ApplyRestCommand(ParticipantId, RecoveryType.LongRest, true));
+
+        _isBusy = false;
+
+        if (!result.IsSuccess)
+        {
+            _resourceError = result.ErrorMessage;
+            return;
+        }
+
+        await ReloadParticipantAsync();
+    }
+}

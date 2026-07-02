@@ -1,0 +1,12 @@
+﻿@page "/sessions/{SessionId:guid}/battlelog"
+@using Web.Components.Shared
+
+<p class="text-muted">BattleLog - WIP</p>
+<SessionNavBar 
+    SessionId="SessionId"
+    ParticipantId="ParticipantId"/>
+
+@code {
+    [Parameter] public Guid SessionId { get; set; }
+    [SupplyParameterFromQuery(Name = "participantId")] public Guid ParticipantId { get; set; }
+}
