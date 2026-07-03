@@ -2,7 +2,6 @@
 @using Domain.Enums
 @using Domain.Entities
 @using DndCompanion.Application.Abstractions.Persistence
-@using Web.Components.Shared
 
 @inject ISessionRepository SessionRepository
 @inject NavigationManager Nav
@@ -31,12 +30,6 @@ else if (_participant.Character is null)
         </div>
     }
 }
-else
-{
-    Nav.NavigateTo($"/sessions/{SessionId}/character?participantId={ParticipantId}");
-}
-
-<SessionNavBar SessionId="SessionId" ParticipantId="ParticipantId"/>
 
 @code {
     [Parameter] public Guid SessionId { get; set; }
@@ -52,6 +45,17 @@ else
         {
             _participant = null;
             _loadFailed = true;
+            return;
+        }
+
+        if (_participant?.Role == SessionRole.Master)
+        {
+            Nav.NavigateTo($"/sessions/{SessionId}/master?participantId={ParticipantId}");
+        }
+
+        if (_participant?.Character is not null )
+        {
+            Nav.NavigateTo($"/sessions/{SessionId}/character?participantId={ParticipantId}");
         }
     }
 }

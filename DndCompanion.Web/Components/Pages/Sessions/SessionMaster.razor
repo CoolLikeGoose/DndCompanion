@@ -1,0 +1,7 @@
+﻿@page "/sessions/{SessionId:guid}/master"
+<h3>SessionMaster - WIP</h3>
+
+@code {
+    [Parameter] public Guid SessionId { get; set; }
+    [SupplyParameterFromQuery(Name = "participantId")] public Guid ParticipantId { get; set; }
+}

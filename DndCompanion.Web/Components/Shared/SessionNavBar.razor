@@ -1,21 +1,24 @@
 ﻿@inject NavigationManager Nav
 
-<nav class="fixed-bottom bg-white border-top py-2">
-    <div class="d-flex justify-content-around">
+<div style="position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 1000;">
+    <div class="d-flex gap-1 bg-white shadow rounded-pill px-3 py-2">
         <a href="/sessions/@SessionId/character?participantId=@ParticipantId" 
-           class="btn @(IsActive("character") ? "btn-primary" : "btn-outline-secondary")">
-            Character
+           class="btn rounded-pill @(IsActive("character") ? "btn-primary" : "btn-outline-secondary")"
+           title="Character">
+            <i class="bi bi-person-fill"></i>
         </a>
         <a href="/sessions/@SessionId/inventory?participantId=@ParticipantId" 
-           class="btn @(IsActive("inventory") ? "btn-primary" : "btn-outline-secondary")">
-            Inventory
+           class="btn rounded-pill @(IsActive("inventory") ? "btn-primary" : "btn-outline-secondary")"
+           title="Inventory">
+            <i class="bi bi-backpack2-fill"></i>
         </a>
         <a href="/sessions/@SessionId/battlelog?participantId=@ParticipantId" 
-           class="btn @(IsActive("battlelog") ? "btn-primary" : "btn-outline-secondary")">
-            Battle Log
+           class="btn rounded-pill @(IsActive("battlelog") ? "btn-primary" : "btn-outline-secondary")"
+           title="Battlelog">
+            <i class="bi bi-shield-fill"></i>
         </a>
     </div>
-</nav>
+</div>
 
 @code {
     [Parameter] public Guid SessionId { get; set; }
