@@ -36,12 +36,6 @@ public sealed class CreateCharacterService
             // Base resources
             character.AddResource(ResourceType.HitPoints, 1, RecoveryType.LongRest);
             character.AddResource(ResourceType.HitDice, 1, RecoveryType.LongRest);
-            
-            // TODO: rework later
-            for (int level = 1; level <= 9; level++)
-            {
-                character.AddResource(ResourceType.SpellSlot, 0, RecoveryType.LongRest, level);
-            }
         }
         catch (ArgumentException e)
         {

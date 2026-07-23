@@ -4,5 +4,5 @@ public enum ResourceType
 {
     HitPoints,
     HitDice,
-    SpellSlot,
+    AbilitySlot,
 }

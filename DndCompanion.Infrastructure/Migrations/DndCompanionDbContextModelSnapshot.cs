@@ -51,8 +51,16 @@ namespace Infrastructure.Migrations
                     b.Property<int>("CurrentValue")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Group")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("MaxValue")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("RecoveryType")
                         .HasColumnType("INTEGER");
@@ -60,14 +68,11 @@ namespace Infrastructure.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("Variant")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CharacterId");
 
-                    b.HasIndex("CharacterId", "Type", "Variant")
+                    b.HasIndex("CharacterId", "Type", "Name")
                         .IsUnique();
 
                     b.ToTable("Resources", (string)null);

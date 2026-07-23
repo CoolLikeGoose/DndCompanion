@@ -30,10 +30,10 @@ public sealed class SetCharacterResourceService
         
         try
         {
-            var updated = character.SetResource(command.ResourceType, command.Variant, command.Value);
+            var updated = character.SetResource(command.ResourceType, command.Name, command.Value);
             await _characterRepository.SaveChangesAsync(cancellationToken);
             
-            return new SetCharacterResourceResult(true, null, updated.Type, updated.Variant, updated.CurrentValue, updated.MaxValue);
+            return new SetCharacterResourceResult(true, null, updated.Type, updated.Name, updated.CurrentValue, updated.MaxValue);
         }
         catch (ArgumentException e)
         {

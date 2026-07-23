@@ -5,5 +5,5 @@ namespace DndCompanion.Application.Features.Characters.Resources.ChangeCharacter
 public sealed record ChangeCharacterResourceCommand(
     Guid ParticipantId,
     ResourceType ResourceType,
-    int? Variant,
+    string? Name,
     int Delta);

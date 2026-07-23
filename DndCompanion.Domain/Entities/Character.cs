@@ -35,32 +35,38 @@ public class Character
         };
     }
 
-    public void AddResource(ResourceType type, int maximum, RecoveryType recovery, int? variant = null, int? initialCurrent = null)
+    public void AddResource(
+        ResourceType type, 
+        int maximum, 
+        RecoveryType recovery,
+        string? name = null,
+        string? group = null,
+        int? initialCurrent = null)
     {
-        if (_resources.Any(x => x.MatchesType(type, variant)))
-            throw new InvalidOperationException($"Resource of type {type} with variant {variant?.ToString() ?? "NONE"} already exists for this character.");
+        if (_resources.Any(x => x.MatchesType(type, name)))
+            throw new InvalidOperationException($"Resource of type {type} with name {name ?? "NONE"} already exists for this character.");
         
-        var resource = Resource.Create(Id, type, maximum, recovery, variant, initialCurrent);
+        var resource = Resource.Create(Id, name, type, maximum, recovery, group, initialCurrent);
         _resources.Add(resource);   
     }
     
-    public Resource ChangeResource(ResourceType type, int? variant, int delta)
+    public Resource ChangeResource(ResourceType type, string? name, int delta)
     {
-        var resource = GetResource(type, variant);
+        var resource = GetResource(type, name);
         resource.Change(delta);
         return resource;
     }
     
-    public Resource SetResource(ResourceType type, int? variant, int value)
+    public Resource SetResource(ResourceType type, string? name, int value)
     {
-        var resource = GetResource(type, variant);
+        var resource = GetResource(type, name);
         resource.SetCurrent(value);
         return resource;
     }
 
-    public Resource SetResourceMaximum(ResourceType type, int? variant, int maximum, bool fillToMaxIfReduced = true)
+    public Resource SetResourceMaximum(ResourceType type, string? name, int maximum, bool fillToMaxIfReduced = true)
     {
-        var resource = GetResource(type, variant);
+        var resource = GetResource(type, name);
         resource.SetMax(maximum, fillToMaxIfReduced);
         return resource;
     }
@@ -77,11 +83,11 @@ public class Character
         return affected;
     }
 
-    private Resource GetResource(ResourceType type, int? variant)
+    private Resource GetResource(ResourceType type, string? name)
     {
-        var resource = _resources.FirstOrDefault(x => x.MatchesType(type, variant));
+        var resource = _resources.FirstOrDefault(x => x.MatchesType(type, name));
         if (resource is null)
-            throw new ArgumentException($"Resource of type {type} with variant {variant?.ToString() ?? "NONE"} not found for this character.", nameof(type));
+            throw new ArgumentException($"Resource of type {type} with name {name ?? "NONE"} not found for this character.", nameof(type));
         
         return resource;
     }

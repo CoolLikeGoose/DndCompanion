@@ -30,10 +30,10 @@ public sealed class SetCharacterResourceMaxService
         
         try
         {
-            var updated = character.SetResourceMaximum(command.ResourceType, command.Variant, command.Value);
+            var updated = character.SetResourceMaximum(command.ResourceType, command.Name, command.Value);
             await _characterRepository.SaveChangesAsync(cancellationToken);
             
-            return new SetCharacterResourceMaxResult(true, null, updated.Type, updated.Variant, updated.CurrentValue, updated.MaxValue);
+            return new SetCharacterResourceMaxResult(true, null, updated.Type, updated.Name, updated.CurrentValue, updated.MaxValue);
         }
         catch (ArgumentException e)
         {

@@ -55,6 +55,30 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Resources",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    CharacterId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    Group = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    Type = table.Column<int>(type: "INTEGER", nullable: false),
+                    CurrentValue = table.Column<int>(type: "INTEGER", nullable: false),
+                    MaxValue = table.Column<int>(type: "INTEGER", nullable: false),
+                    RecoveryType = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Resources", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Resources_Characters_CharacterId",
+                        column: x => x.CharacterId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SessionParticipants",
                 columns: table => new
                 {
@@ -89,6 +113,17 @@ namespace Infrastructure.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Resources_CharacterId",
+                table: "Resources",
+                column: "CharacterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Resources_CharacterId_Type_Name",
+                table: "Resources",
+                columns: new[] { "CharacterId", "Type", "Name" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SessionParticipants_CharacterId",
                 table: "SessionParticipants",
                 column: "CharacterId");
@@ -108,6 +143,9 @@ namespace Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Resources");
+
             migrationBuilder.DropTable(
                 name: "SessionParticipants");
 

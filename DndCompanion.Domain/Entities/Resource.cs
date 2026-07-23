@@ -9,20 +9,23 @@ public class Resource
         
     }
     
+    // Resources are identified by their type and name. The ID is only used for database purposes.
     public Guid Id { get; private set; }
     public Guid CharacterId { get; private set; }
+    public string? Name { get; private set; }           // Name of the resource, e.g. "Rage points"
+    public string? Group { get; private set; }          // Group of the resource, e.g. "Spell Slots" for multiple spell slots of different levels
     public ResourceType Type { get; private set; }
-    public int? Variant { get; private set; }
     public int CurrentValue { get; private set; }
     public int MaxValue { get; private set; }
     public RecoveryType RecoveryType { get; private set; }
     
     public static Resource Create(
         Guid characterId, 
+        string? name,
         ResourceType type, 
         int maxValue, 
-        RecoveryType recoveryType, 
-        int? variant = null,
+        RecoveryType recoveryType,
+        string? group = null,
         int? initialCurrent = null)
     {
         if (characterId == Guid.Empty) 
@@ -39,17 +42,18 @@ public class Resource
         {
             Id = Guid.NewGuid(),
             CharacterId = characterId,
+            Name = name,
+            Group = group,
             Type = type,
-            Variant = variant,
             CurrentValue = currentValue,
             MaxValue = maxValue,
             RecoveryType = recoveryType
         };
     }
     
-    public bool MatchesType(ResourceType type, int? variant = null)
+    public bool MatchesType(ResourceType type, string? name = null)
     {
-        return Type == type && Variant == variant;
+        return Type == type && Name == name;
     }
 
     public void Change(int delta)

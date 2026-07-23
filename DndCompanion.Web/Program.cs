@@ -4,6 +4,7 @@ using DndCompanion.Application.Abstractions.Persistence;
 using DndCompanion.Application.Features.Auth.Login;
 using DndCompanion.Application.Features.Auth.Register;
 using DndCompanion.Application.Features.Characters.CreateCharacter;
+using DndCompanion.Application.Features.Characters.Resources.AddAbilitySlot;
 using DndCompanion.Application.Features.Characters.Resources.ApplyRest;
 using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource;
 using DndCompanion.Application.Features.Characters.Resources.SetCharacterResource;
@@ -58,6 +59,7 @@ builder.Services.AddScoped<SelectCharacterService>();
 builder.Services.AddScoped<ChangeCharacterResourceService>();
 builder.Services.AddScoped<SetCharacterResourceService>();
 builder.Services.AddScoped<SetCharacterResourceMaxService>();
+builder.Services.AddScoped<AddAbilitySlotService>();
 builder.Services.AddScoped<ApplyRestService>();
 
 

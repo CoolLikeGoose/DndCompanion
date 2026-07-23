@@ -5,5 +5,5 @@ namespace DndCompanion.Application.Features.Characters.Resources.SetCharacterRes
 public sealed record SetCharacterResourceCommand(
     Guid ParticipantId,
     ResourceType ResourceType,
-    int? Variant,
+    string? Name,
     int Value);
