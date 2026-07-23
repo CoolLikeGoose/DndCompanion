@@ -19,4 +19,7 @@ public class PinCode
     }
     
     public override string ToString() => Value;
+
+    public override bool Equals(object? obj) => obj is PinCode other && Value == other.Value;
+    public override int GetHashCode() => Value.GetHashCode();
 }

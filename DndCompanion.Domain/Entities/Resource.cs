@@ -66,7 +66,7 @@ public class Resource
         CurrentValue = Math.Clamp(value, 0, MaxValue);
     }
     
-    public void SetMax(int value, bool fillToMaxIfReduced = true)
+    public void SetMax(int value, bool fillToMaxIfChanged = true)
     {
         if (value < 0) 
             throw new ArgumentException("Max value cannot be negative", nameof(value));
@@ -75,12 +75,12 @@ public class Resource
         if (CurrentValue > MaxValue)
             CurrentValue = MaxValue;
         
-        if (fillToMaxIfReduced)
+        if (fillToMaxIfChanged)
             CurrentValue = MaxValue;
     }
     
     // TODO: Change includeShortOnLongRest to a more flexible system of recovery rules
-    public bool CanRecoverOn(RecoveryType restType, bool includeShortOnLongRest)
+    public bool CanRecoverOn(RecoveryType restType, bool includeShortOnLongRest = true)
     {
         if (RecoveryType == RecoveryType.None)
             return false;

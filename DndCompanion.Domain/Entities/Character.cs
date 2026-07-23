@@ -71,7 +71,7 @@ public class Character
         return resource;
     }
 
-    public int ApplyRest(RecoveryType restType, bool includeShortOnLongRest)
+    public int ApplyRest(RecoveryType restType, bool includeShortOnLongRest = true)
     {
         var affected = 0;
         foreach (var resource in _resources.Where(x => x.CanRecoverOn(restType, includeShortOnLongRest)))
