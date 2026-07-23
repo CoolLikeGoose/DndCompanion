@@ -49,18 +49,26 @@
                                     @* <span class="badge bg-dark">Live</span> *@
                                 </div>
                                 
+                                @{
+                                    var hp = FindResource(ResourceType.HitPoints, null);
+                                }
                                 <ResourceCard 
                                     Label="Hit Points"
-                                    Value="@FormatResource(ResourceType.HitPoints, null)"
+                                    CurrentValue="@(hp?.CurrentValue ?? 0)"
+                                    MaxValue="@(hp?.MaxValue ?? 0)"
                                     IsGlobalEditMode="_globalEdit"
                                     Disabled="_isBusy"
                                     OnEditClick='() => OpenEditor(ResourceType.HitPoints, null, "Hit Points")'/>
                                 
+                                @{
+                                    var hitDice = FindResource(ResourceType.HitDice, null);
+                                }
                                 <ResourceCard 
                                     Label="Hit Dice"
-                                    Value="@FormatResource(ResourceType.HitDice, null)"
-                                    Disabled="_isBusy"
+                                    CurrentValue="@(hitDice?.CurrentValue ?? 0)"
+                                    MaxValue="@(hitDice?.MaxValue ?? 0)"
                                     IsGlobalEditMode="_globalEdit"
+                                    Disabled="_isBusy"
                                     OnEditClick='() => OpenEditor(ResourceType.HitDice, null, "Hit Dice")'/>
                             </div>
                         </div>
@@ -88,7 +96,8 @@
                                         {
                                             <ResourceCard
                                                 Label="@(resource.Name ?? resource.Type.ToString())"
-                                                Value="@FormatResource(ResourceType.AbilitySlot, resource.Name)"
+                                                CurrentValue="@(resource.CurrentValue)"
+                                                MaxValue="@(resource.MaxValue)"
                                                 Disabled="_isBusy"
                                                 IsGlobalEditMode="_globalEdit"
                                                 OnEditClick='() => OpenEditor(ResourceType.AbilitySlot, resource.Name, resource.Name ?? "Ability")'/>
@@ -151,7 +160,7 @@
                     {
                         <div class="mb-3">
                         <span class="small text-muted">Current</span>
-                        <div class="fs-5 fw-bold">@FormatResource(_selectedResourceType, _selectedName)</div>
+                        <div class="fs-5 fw-bold">WIP</div>
                     </div>
 
                     <div class="btn-group mb-3" role="group">
@@ -298,12 +307,6 @@
         }
 
         _resourceError = null;
-    }
-
-    private string FormatResource(ResourceType type, string? name)
-    {
-        var resource = FindResource(type, name);
-        return resource is null ? "- / -" : $"{resource.CurrentValue}/{resource.MaxValue}";
     }
 
     private Resource? FindResource(ResourceType type, string? name)
