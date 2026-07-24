@@ -10,12 +10,15 @@
 @using Domain.Enums
 
 @inject ISessionRepository SessionRepository
+
+@inject SessionNotificationService SessionNotificationService
+@implements IDisposable
+
 @inject ChangeCharacterResourceService ChangeCharacterResourceService
 @inject SetCharacterResourceService SetCharacterResourceService
 @inject SetCharacterResourceMaxService SetCharacterResourceMaxService
 @inject AddAbilitySlotService AddAbilitySlotService
 @inject ApplyRestService ApplyRestService
-
 
 <div class="row justify-content-center">
     <div class="col-12 col-lg-9">
@@ -340,6 +343,7 @@
 
         _addAbilityModalOpen = false;
         await ReloadParticipantAsync();
+        await SessionNotificationService.NotifyAsync(SessionId);
     }
 
     private void OpenEditor(ResourceType type, string? name, string label)
@@ -395,6 +399,7 @@
         }
 
         await ReloadParticipantAsync();
+        await SessionNotificationService.NotifyAsync(SessionId);
     }
 
     private async Task ApplySetCurrent()
@@ -414,6 +419,7 @@
         }
 
         await ReloadParticipantAsync();
+        await SessionNotificationService.NotifyAsync(SessionId);
     }
 
     private async Task ApplySetMax()
@@ -433,6 +439,7 @@
         }
 
         await ReloadParticipantAsync();
+        await SessionNotificationService.NotifyAsync(SessionId);
         CloseEditor();
     }
     
@@ -453,5 +460,12 @@
         }
 
         await ReloadParticipantAsync();
+        await SessionNotificationService.NotifyAsync(SessionId);
     }
+
+    public void Dispose()
+    {
+        //
+    }
+
 }

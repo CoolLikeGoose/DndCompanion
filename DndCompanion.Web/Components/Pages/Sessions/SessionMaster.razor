@@ -4,7 +4,10 @@
 @using Domain.Enums
 @using Web.Components.Shared
 
-@inject ISessionRepository SessionRepository
+@inject IServiceScopeFactory ScopeFactory
+
+@inject SessionNotificationService SessionNotificationService
+@implements IDisposable
 
 <h3>SessionMaster - WIP</h3>
 
@@ -60,6 +63,25 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _session = await SessionRepository.FindByIdWithParticipantsAndCharactersAsync(SessionId);   
+        await LoadSessionAsync();
+        SessionNotificationService.Subscribe(SessionId, OnSessionUpdated);
+    }
+
+    private async Task LoadSessionAsync()
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var repo = scope.ServiceProvider.GetRequiredService<ISessionRepository>();
+        _session = await repo.FindByIdWithParticipantsAndCharactersAsync(SessionId);
+    }
+
+    private async Task OnSessionUpdated()
+    {
+        await LoadSessionAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        SessionNotificationService.Unsubscribe(SessionId, OnSessionUpdated);
     }
 }
