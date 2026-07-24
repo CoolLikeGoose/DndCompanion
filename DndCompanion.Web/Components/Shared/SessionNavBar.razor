@@ -1,28 +1,41 @@
-﻿@inject NavigationManager Nav
+﻿@using Domain.Enums
+@inject NavigationManager Nav
 
 <div style="position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 1000;">
     <div class="d-flex gap-1 bg-white shadow rounded-pill px-3 py-2">
-        <a href="/sessions/@SessionId/character?participantId=@ParticipantId" 
-           class="btn rounded-pill @(IsActive("character") ? "btn-primary" : "btn-outline-secondary")"
-           title="Character">
-            <i class="bi bi-person-fill"></i>
-        </a>
-        <a href="/sessions/@SessionId/inventory?participantId=@ParticipantId" 
-           class="btn rounded-pill @(IsActive("inventory") ? "btn-primary" : "btn-outline-secondary")"
-           title="Inventory">
-            <i class="bi bi-backpack2-fill"></i>
-        </a>
-        <a href="/sessions/@SessionId/battlelog?participantId=@ParticipantId" 
-           class="btn rounded-pill @(IsActive("battlelog") ? "btn-primary" : "btn-outline-secondary")"
-           title="Battlelog">
-            <i class="bi bi-shield-fill"></i>
-        </a>
+        @if (Role == SessionRole.Master)
+        {
+            <a href="/sessions/@SessionId/master?participantId=@ParticipantId" 
+               class="btn rounded-pill @(IsActive("master") ? "btn-primary" : "btn-outline-secondary")"
+               title="Master">
+                <i class="bi bi-person-fill"></i>
+            </a>
+        }
+        else
+        {
+            <a href="/sessions/@SessionId/character?participantId=@ParticipantId" 
+               class="btn rounded-pill @(IsActive("character") ? "btn-primary" : "btn-outline-secondary")"
+               title="Character">
+                <i class="bi bi-person-fill"></i>
+            </a>
+            <a href="/sessions/@SessionId/inventory?participantId=@ParticipantId" 
+               class="btn rounded-pill @(IsActive("inventory") ? "btn-primary" : "btn-outline-secondary")"
+               title="Inventory">
+                <i class="bi bi-backpack2-fill"></i>
+            </a>
+            <a href="/sessions/@SessionId/battlelog?participantId=@ParticipantId" 
+               class="btn rounded-pill @(IsActive("battlelog") ? "btn-primary" : "btn-outline-secondary")"
+               title="Battlelog">
+                <i class="bi bi-shield-fill"></i>
+            </a>
+        }
     </div>
 </div>
 
 @code {
     [Parameter] public Guid SessionId { get; set; }
     [Parameter] public Guid ParticipantId { get; set; }
+    [Parameter] public SessionRole Role { get; set; } = SessionRole.Player;
     
     private bool IsActive(string segment) => 
         Nav.Uri.Contains($"/sessions/{SessionId}/{segment}", StringComparison.OrdinalIgnoreCase);
