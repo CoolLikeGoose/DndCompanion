@@ -12,7 +12,6 @@
 @inject ISessionRepository SessionRepository
 
 @inject SessionNotificationService SessionNotificationService
-@implements IDisposable
 
 @inject ChangeCharacterResourceService ChangeCharacterResourceService
 @inject SetCharacterResourceService SetCharacterResourceService
@@ -462,10 +461,4 @@
         await ReloadParticipantAsync();
         await SessionNotificationService.NotifyAsync(SessionId);
     }
-
-    public void Dispose()
-    {
-        //
-    }
-
 }

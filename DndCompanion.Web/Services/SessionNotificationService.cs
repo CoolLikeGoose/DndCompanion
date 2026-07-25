@@ -3,32 +3,53 @@
 public sealed class SessionNotificationService
 {
     private readonly Dictionary<Guid, List<Func<Task>>> _handlers = new();
+    private readonly object _lock = new();
     
     public void Subscribe(Guid sessionId, Func<Task> handler)
     {
-        if (!_handlers.ContainsKey(sessionId))
+        lock (_lock)
         {
-            _handlers[sessionId] = new List<Func<Task>>();
-        }
+            if (!_handlers.ContainsKey(sessionId))
+            {
+                _handlers[sessionId] = new List<Func<Task>>();
+            }
 
-        _handlers[sessionId].Add(handler);
+            _handlers[sessionId].Add(handler);
+        }
     }
     
     public void Unsubscribe(Guid sessionId, Func<Task> handler)
     {
-        if (_handlers.TryGetValue(sessionId, out var handlers))
+        lock (_lock)
         {
-            handlers.Remove(handler);
+            if (_handlers.TryGetValue(sessionId, out var handlers))
+            {
+                handlers.Remove(handler);
+            }
         }
     }
     
     public async Task NotifyAsync(Guid sessionId)
     {
-        if (_handlers.TryGetValue(sessionId, out var handlers))
+        List<Func<Task>> snapshot;
+        lock (_lock)
         {
-            foreach (var handler in handlers.ToList())
+            if (!_handlers.TryGetValue(sessionId, out var handlers))
+            {
+                return;
+            }   
+            snapshot = handlers.ToList();
+        }
+
+        foreach (var handler in snapshot)
+        {
+            try
             {
                 await handler();
+            }
+            catch
+            {
+                // ignored
             }
         }
     }
