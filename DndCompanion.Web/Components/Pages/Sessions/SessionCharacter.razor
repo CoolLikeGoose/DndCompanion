@@ -31,7 +31,7 @@
                     <div class="ms-auto">
                         <button class="btn btn-primary" @onclick="ApplyLongRest" disabled="@_isBusy">Long Rest</button>
                         <button class="btn btn-primary" @onclick="() => _globalEdit = !_globalEdit">
-                            @(_globalEdit ? "Cancel" : "Edit stats")
+                            @(_globalEdit ? "Cancel" : "Edit Resources")
                         </button>
                     </div>
                 </div>
@@ -42,7 +42,7 @@
                 }
 
                 @* Core resources *@
-                <div class="row g-3"> 
+                <div class="row g-3">
                     <div class="col-12 col-md-6">
                         <div class="card bg-light h-100">
                             <div class="card-body">
@@ -50,22 +50,22 @@
                                     <h5 class="mb-0">Core resources</h5>
                                     @* <span class="badge bg-dark">Live</span> *@
                                 </div>
-                                
+
                                 @{
                                     var hp = FindResource(ResourceType.HitPoints, null);
                                 }
-                                <ResourceCard 
+                                <ResourceCard
                                     Label="Hit Points"
                                     CurrentValue="@(hp?.CurrentValue ?? 0)"
                                     MaxValue="@(hp?.MaxValue ?? 0)"
                                     IsGlobalEditMode="_globalEdit"
                                     Disabled="_isBusy"
                                     OnEditClick='() => OpenEditor(ResourceType.HitPoints, null, "Hit Points")'/>
-                                
+
                                 @{
                                     var hitDice = FindResource(ResourceType.HitDice, null);
                                 }
-                                <ResourceCard 
+                                <ResourceCard
                                     Label="Hit Dice"
                                     CurrentValue="@(hitDice?.CurrentValue ?? 0)"
                                     MaxValue="@(hitDice?.MaxValue ?? 0)"
@@ -75,19 +75,19 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     @* Ability slots *@
                     <div class="col-12 col-md-6">
-                        <div class="card text-center bg-light">
+                        <div class="card bg-light">
                             <div class="card-body py-3">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h5 class="mb-0">Abilities</h5>
                                 </div>
-                                
+
                                 @foreach (var group in _participant.Character.Resources
-                                              .Where(r => r.Type == ResourceType.AbilitySlot)
-                                              .GroupBy(r => r.Group ?? "Abilities")
-                                              .OrderBy(g => g.Key))
+                                                  .Where(r => r.Type == ResourceType.AbilitySlot)
+                                                  .GroupBy(r => r.Group ?? "Abilities")
+                                                  .OrderBy(g => g.Key))
                                 {
                                     <div>
                                         @* <div class="col-12 col-md-6"> *@
@@ -106,23 +106,25 @@
                                         }
                                         @if (_globalEdit)
                                         {
-                                            <button class="btn btn-sm btn-outline-primary w-100 h-100" @onclick="() => OpenAddAbilityModal(group.Key)">
+                                            <button class="btn btn-sm btn-outline-primary w-100 h-100 mb-2"
+                                                    @onclick="() => OpenAddAbilityModal(group.Key)">
                                                 + New ability
                                             </button>
                                         }
                                     </div>
                                 }
-                                
+
                                 @if (_globalEdit)
                                 {
-                                    <button class="btn btn-outline-secondary w-100 h-100" @onclick="() => OpenAddAbilityModal(null)">
+                                    <button class="btn btn-outline-secondary w-100 h-100"
+                                            @onclick="() => OpenAddAbilityModal(null)">
                                         + New group
                                     </button>
                                 }
                             </div>
                         </div>
                     </div>
-                    
+
                     @* Other staff *@
                     <div class="col-6 col-md-3">
                         <div class="card text-center bg-light">
@@ -151,54 +153,76 @@
                 </div>
 
                 <div class="modal-body">
+                    <div class="mb-1">
+                        <span class="small text-muted">Current</span>
+                        <div class="fs-5 fw-bold">@FormatResource(FindResource(_selectedResourceType, _selectedName))</div>
+                    </div>
+                    
                     @if (_globalEdit)
                     {
+                        <div class="text-muted mb-1">Set new maximum</div>
                         <div class="input-group">
-                            <input type="number" class="form-control" @bind="_setMaxValue" />
-                            <button class="btn btn-secondary" @onclick="ApplySetMax" disabled="@_isBusy">Set max</button>
+                            <input type="number" class="form-control" @bind="_setMaxValue"/>
+                            <button class="btn btn-secondary" @onclick="ApplySetMax" disabled="@_isBusy">
+                                Set max
+                            </button>
                         </div>
                     }
                     else
                     {
-                        <div class="mb-3">
-                        <span class="small text-muted">Current</span>
-                        <div class="fs-5 fw-bold">WIP</div>
-                    </div>
-
-                    <div class="btn-group mb-3" role="group">
-                        <button class="btn btn-outline-primary @( _editMode == EditMode.Change ? "active" : string.Empty)"
+                        <div class="btn-group mb-1" role="group">
+                            <button
+                                class="btn btn-outline-primary @(_editMode == EditMode.Change ? "active" : string.Empty)"
                                 @onclick="() => _editMode = EditMode.Change">
-                            Change
-                        </button>
-                        <button class="btn btn-outline-primary @( _editMode == EditMode.Set ? "active" : string.Empty)"
+                                Change
+                            </button>
+                            <button
+                                class="btn btn-outline-primary @(_editMode == EditMode.Set ? "active" : string.Empty)"
                                 @onclick="() => _editMode = EditMode.Set">
-                            Set
-                        </button>
-                    </div>
-
-                    @if (_editMode == EditMode.Change)
-                    {
-                        <div class="mb-2 d-flex flex-wrap gap-2">
-                            <button class="btn btn-outline-danger" @onclick="() => QuickChange(-10)" disabled="@_isBusy">-10</button>
-                            <button class="btn btn-outline-danger" @onclick="() => QuickChange(-5)" disabled="@_isBusy">-5</button>
-                            <button class="btn btn-outline-danger" @onclick="() => QuickChange(-1)" disabled="@_isBusy">-1</button>
-                            <button class="btn btn-outline-success" @onclick="() => QuickChange(1)" disabled="@_isBusy">+1</button>
-                            <button class="btn btn-outline-success" @onclick="() => QuickChange(5)" disabled="@_isBusy">+5</button>
-                            <button class="btn btn-outline-success" @onclick="() => QuickChange(10)" disabled="@_isBusy">+10</button>
+                                Set
+                            </button>
                         </div>
 
-                        <div class="input-group">
-                            <input type="number" class="form-control" @bind="_changeDelta" />
-                            <button class="btn btn-primary" @onclick="ApplyChangeDelta" disabled="@_isBusy">Apply</button>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="input-group mb-2">
-                            <input type="number" class="form-control" @bind="_setCurrentValue" />
-                            <button class="btn btn-primary" @onclick="ApplySetCurrent" disabled="@_isBusy">Set current</button>
-                        </div>
-                    }
+                        @if (_editMode == EditMode.Change)
+                        {
+                            <div class="text-muted mb-1">Adjust value with buttons, or change it manually (e.g. +13/-8)</div>
+                            <div class="mb-2 d-flex flex-wrap gap-2">
+                                <button class="btn btn-outline-danger" @onclick="() => QuickChange(-10)"
+                                        disabled="@_isBusy">-10
+                                </button>
+                                <button class="btn btn-outline-danger" @onclick="() => QuickChange(-5)"
+                                        disabled="@_isBusy">-5
+                                </button>
+                                <button class="btn btn-outline-danger" @onclick="() => QuickChange(-1)"
+                                        disabled="@_isBusy">-1
+                                </button>
+                                <button class="btn btn-outline-success" @onclick="() => QuickChange(1)"
+                                        disabled="@_isBusy">+1
+                                </button>
+                                <button class="btn btn-outline-success" @onclick="() => QuickChange(5)"
+                                        disabled="@_isBusy">+5
+                                </button>
+                                <button class="btn btn-outline-success" @onclick="() => QuickChange(10)"
+                                        disabled="@_isBusy">+10
+                                </button>
+                            </div>
+
+                            <div class="input-group">
+                                <input type="number" class="form-control" @bind="_changeDelta"/>
+                                <button class="btn btn-primary" @onclick="ApplyChangeDelta" disabled="@_isBusy">Apply
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-muted mb-1">Set current value to a specific value</div>
+                            <div class="input-group mb-2">
+                                <input type="number" class="form-control" @bind="_setCurrentValue"/>
+                                <button class="btn btn-primary" @onclick="ApplySetCurrent" disabled="@_isBusy">Set
+                                    current
+                                </button>
+                            </div>
+                        }
                     }
                 </div>
             </div>
@@ -222,12 +246,14 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="abilityName" class="form-label">Name</label>
-                        <input type="text" class="form-control" @bind="_newAbilityName" placeholder="e.g. Rage, Lvl 1, Chaos points"/>
+                        <input type="text" class="form-control" @bind="_newAbilityName"
+                               placeholder="e.g. Rage, Lvl 1, Chaos points"/>
                     </div>
 
                     <div class="mb-3">
                         <label for="abilityGroup" class="form-label">Group</label>
-                        <input type="text" id="abilityGroup" class="form-control" @bind="_newAbilityGroup" placeholder="e.g. Spell Slots"/>
+                        <input type="text" id="abilityGroup" class="form-control" @bind="_newAbilityGroup"
+                               placeholder="e.g. Spell Slots"/>
                     </div>
 
                     <div class="mb-3">
@@ -244,7 +270,7 @@
                     @*         } *@
                     @*     </select> *@
                     @* </div> *@
-                    
+
                     <div class="modal-footer">
                         <button class="btn btn-secondary" @onclick="() => _addAbilityModalOpen = false">Cancel</button>
                         <button class="btn btn-primary" @onclick="ApplyAddAbility" disabled="@_isBusy">Add</button>
@@ -261,7 +287,9 @@
 
 @code {
     [Parameter] public Guid SessionId { get; set; }
-    [SupplyParameterFromQuery(Name = "participantId")] public Guid ParticipantId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "participantId")]
+    public Guid ParticipantId { get; set; }
 
     private SessionParticipant? _participant;
     private bool _loadFailed;
@@ -272,14 +300,14 @@
     private ResourceType _selectedResourceType;
     private string? _selectedName;
     private string _selectedResourceLabel = string.Empty;
-    
+
     // ability
     private bool _addAbilityModalOpen;
     private string _newAbilityName = string.Empty;
     private string? _newAbilityGroup;
     private int _addAbilityMax = 1;
     private RecoveryType _addAbilityRecoveryType = RecoveryType.LongRest;
-    
+
     private EditMode _editMode = EditMode.Change;
     private bool _globalEdit = false;
     private int _changeDelta = 1;
@@ -317,7 +345,7 @@
         return _participant?.Character?.Resources
             .FirstOrDefault(x => x.Type == type && x.Name == name);
     }
-    
+
     private void OpenAddAbilityModal(string? group)
     {
         _addAbilityModalOpen = true;
@@ -329,7 +357,7 @@
     private async Task ApplyAddAbility()
     {
         if (string.IsNullOrWhiteSpace(_newAbilityName)) return;
-        
+
         _isBusy = true;
         var result = await AddAbilitySlotService.ExecuteAsync(
             new AddAbilitySlotCommand(ParticipantId, _newAbilityName, _newAbilityGroup, _addAbilityMax, RecoveryType.LongRest));
@@ -442,7 +470,7 @@
         await SessionNotificationService.NotifyAsync(SessionId);
         CloseEditor();
     }
-    
+
     private async Task ApplyLongRest()
     {
         _isBusy = true;
@@ -462,4 +490,10 @@
         await ReloadParticipantAsync();
         await SessionNotificationService.NotifyAsync(SessionId);
     }
+
+    private string FormatResource(Resource? resource)
+    {
+        return resource is null ? "-" : $"{resource.CurrentValue}/{resource.MaxValue}";
+    }
+
 }
