@@ -167,6 +167,12 @@
                                 Set max
                             </button>
                         </div>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="fillToMax" @bind="_fillToMax"/>
+                            <label class="form-check-label" for="fillToMax">
+                                Fill to new maximum
+                            </label>
+                        </div>
                     }
                     else
                     {
@@ -300,6 +306,7 @@
     private ResourceType _selectedResourceType;
     private string? _selectedName;
     private string _selectedResourceLabel = string.Empty;
+    private bool _fillToMax = true;
 
     // ability
     private bool _addAbilityModalOpen;
@@ -456,7 +463,7 @@
         _resourceError = null;
 
         var result = await SetCharacterResourceMaxService.ExecuteAsync(
-            new SetCharacterResourceMaxCommand(ParticipantId, _selectedResourceType, _selectedName, _setMaxValue));
+            new SetCharacterResourceMaxCommand(ParticipantId, _selectedResourceType, _selectedName, _setMaxValue, _fillToMax));
 
         _isBusy = false;
 

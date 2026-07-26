@@ -30,7 +30,7 @@ public sealed class SetCharacterResourceMaxService
         
         try
         {
-            var updated = character.SetResourceMaximum(command.ResourceType, command.Name, command.Value);
+            var updated = character.SetResourceMaximum(command.ResourceType, command.Name, command.Value, command.FillToMax);
             await _characterRepository.SaveChangesAsync(cancellationToken);
             
             return new SetCharacterResourceMaxResult(true, null, updated.Type, updated.Name, updated.CurrentValue, updated.MaxValue);

@@ -6,4 +6,5 @@ public sealed record SetCharacterResourceMaxCommand(
     Guid ParticipantId,
     ResourceType ResourceType,
     string? Name,
-    int Value);
+    int Value,
+    bool FillToMax = true);
