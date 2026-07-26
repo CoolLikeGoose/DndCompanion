@@ -138,4 +138,55 @@ public class CharacterTests
             Assert.Equal(2, affectedCount);
         }
     }
+
+    public class AddItem
+    {
+        [Fact]
+        public void AddsItem_WhenValid()
+        {
+            var character = CreateCharacter();
+            character.AddItem("Sword", "A sharp blade", "http://example.com/sword");
+            Assert.Single(character.Items);
+        }
+        
+        [Fact]
+        public void ReturnsItem_WhenValid()
+        {
+            var character = CreateCharacter();
+            var item = character.AddItem("Sword", "A sharp blade", "http://example.com/sword");
+            Assert.Equal("Sword", item.Name);
+            Assert.Equal("A sharp blade", item.Description);
+            Assert.Equal("http://example.com/sword", item.SourceUrl);
+            Assert.Equal(1, item.Quantity);
+            Assert.Null(item.ChargeResourceId);
+        }
+        
+        [Fact]
+        public void AddsMultipleItems_WhenValid()
+        {
+            var character = CreateCharacter();
+            character.AddItem("Sword", "A sharp blade", "http://example.com/sword");
+            character.AddItem("Shield", "A sturdy shield", "http://example.com/shield");
+            Assert.Equal(2, character.Items.Count);
+        }
+    }
+    
+    public class RemoveItem
+    {
+        [Fact]
+        public void RemovesItem_WhenValid()
+        {
+            var character = CreateCharacter();
+            var item = character.AddItem("Sword", "A sharp blade", "http://example.com/sword");
+            character.RemoveItem(item.Id);
+            Assert.Empty(character.Items);
+        }
+
+        [Fact]
+        public void Throws_WhenItemNotFound()
+        {
+            var character = CreateCharacter();
+            Assert.Throws<ArgumentException>(() => character.RemoveItem(Guid.NewGuid()));
+        }
+    }
 }
