@@ -116,4 +116,13 @@ public class Character
         
         _items.Remove(item);
     }
+    
+    public void UpdateItem(Guid itemId, string? name, string? description, string? sourceUrl, int? quantity)
+    {
+        var item = _items.FirstOrDefault(x => x.Id == itemId);
+        if (item is null)
+            throw new ArgumentException($"Item with id {itemId} not found for this character.", nameof(itemId));
+        
+        item.Update(name, description, sourceUrl, quantity);
+    }
 }
