@@ -295,6 +295,7 @@
     protected override async Task OnInitializedAsync()
     {
         await ReloadParticipantAsync();
+        await SessionNotificationService.NotifyAsync(SessionId);
     }
 
     private async Task ReloadParticipantAsync()
