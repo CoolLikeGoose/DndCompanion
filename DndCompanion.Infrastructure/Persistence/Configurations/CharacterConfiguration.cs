@@ -26,5 +26,10 @@ public sealed class CharacterConfiguration : IEntityTypeConfiguration<Character>
             .WithOne()
             .HasForeignKey(x => x.CharacterId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasMany(x => x.Items)
+            .WithOne()
+            .HasForeignKey(x => x.CharacterId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -4,5 +4,6 @@ public enum RecoveryType
 {
     None,
     ShortRest,
-    LongRest
+    LongRest,
+    TimeDependent
 }

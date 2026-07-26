@@ -17,6 +17,9 @@ public class Character
     private readonly List<Resource> _resources = new();
     public IReadOnlyCollection<Resource> Resources => _resources.AsReadOnly();
     
+    private readonly List<Item> _items = new();
+    public IReadOnlyCollection<Item> Items => _items.AsReadOnly();
+    
     public static Character Create(string name, Guid? userId)
     {
         if (string.IsNullOrWhiteSpace(name)) 
@@ -34,7 +37,8 @@ public class Character
             CreatedAt = DateTime.UtcNow
         };
     }
-
+    
+    // Resources
     public void AddResource(
         ResourceType type, 
         int maximum, 
@@ -90,5 +94,26 @@ public class Character
             throw new ArgumentException($"Resource of type {type} with name {name ?? "NONE"} not found for this character.", nameof(type));
         
         return resource;
+    }
+    
+    // Items   
+    public Item AddItem(
+        string name, 
+        string? description,
+        string? sourceUrl,
+        int quantity = 1)
+    {
+        var item = Item.Create(Id, name, description, sourceUrl, quantity);
+        _items.Add(item);  
+        return item;
+    }
+
+    public void RemoveItem(Guid itemId)
+    {
+        var item = _items.FirstOrDefault(x => x.Id == itemId);
+        if (item is null)
+            throw new ArgumentException($"Item with id {itemId} not found for this character.", nameof(itemId));
+        
+        _items.Remove(item);
     }
 }

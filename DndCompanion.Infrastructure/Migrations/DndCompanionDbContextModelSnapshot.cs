@@ -40,6 +40,38 @@ namespace Infrastructure.Migrations
                     b.ToTable("Characters", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Item", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ChargeResourceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SourceUrl")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharacterId");
+
+                    b.ToTable("Items", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.Resource", b =>
                 {
                     b.Property<Guid>("Id")
@@ -165,6 +197,15 @@ namespace Infrastructure.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Item", b =>
+                {
+                    b.HasOne("Domain.Entities.Character", null)
+                        .WithMany("Items")
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Domain.Entities.Resource", b =>
                 {
                     b.HasOne("Domain.Entities.Character", null)
@@ -192,6 +233,8 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Character", b =>
                 {
+                    b.Navigation("Items");
+
                     b.Navigation("Resources");
                 });
 
