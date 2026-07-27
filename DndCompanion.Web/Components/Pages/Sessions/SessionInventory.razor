@@ -1,7 +1,93 @@
 ﻿@page "/sessions/{SessionId:guid}/inventory"
+@using DndCompanion.Application.Abstractions.Persistence
+@using DndCompanion.Application.Features.Characters.Items.AddItem
+@using DndCompanion.Application.Features.Characters.Items.RemoveItem
+@using DndCompanion.Application.Features.Characters.Items.UpdateItem
+@using Domain.Entities
 @using Web.Components.Shared
 
-<p class="text-muted">Inventory - WIP</p>
+@inject ISessionRepository SessionRepository
+@inject AddItemService AddItemService
+@inject RemoveItemService RemoveItemService
+@inject UpdateItemService UpdateItemService
+
+@if (_participant?.Character is not null)
+{
+    <div class="container py-3 pb-5">
+        <div class="d-flex align-items-center mb-3">
+            <h2 class="mb-0">@_participant.Character.Name</h2>
+            <div class="ms-auto d-flex gap-2">
+                <button class="btn @(_editMode ? "btn-warning" : "btn-outline-secondary")"
+                        @onclick="() => _editMode = !_editMode">
+                    @(_editMode ? "Done" : "Edit")
+                </button>
+            </div>
+        </div>
+        
+        @if (_editMode)
+        {
+            <button class="btn btn-outline-primary w-100 mb-3" @onclick="OpenAddModal">+ Add item</button>
+        }
+        
+        @if (!_participant.Character.Items.Any())
+        {
+            <p class="text-muted">No items yet.</p>
+        }
+        else
+        {
+            @foreach (var item in _participant.Character.Items.OrderBy(i => i.Name))
+            {
+                <ItemCard 
+                    Item="item"
+                    IsEditMode="_editMode"
+                    OnEdit="OpenEditModal"
+                    OnRemove="RemoveItem"/>
+            }
+        }
+    </div>
+}
+
+@if (_modalOpen)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" @onkeydown="@((KeyboardEventArgs e) => { if (e.Key == "Enter") InvokeAsync(SaveItem); })">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(_editedItem is null ? "Add item" : "Edit item")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" @bind="_formName" placeholder="e.g. Longsword"/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" @bind="_formDescription" rows="3" placeholder="Optional"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Source URL</label>
+                        <input type="url" class="form-control" @bind="_formSourceUrl" placeholder="https://dnd.su/..."/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" @bind="_formQuantity" min="0"/>
+                    </div>
+                    @if (_error is not null)
+                    {
+                        <div class="alert alert-danger">@_error</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                    <button class="btn btn-primary" @onclick="SaveItem" disabled="@_isBusy">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
 <SessionNavBar 
     SessionId="SessionId"
     ParticipantId="ParticipantId"/>
@@ -9,4 +95,122 @@
 @code {
     [Parameter] public Guid SessionId { get; set; }
     [SupplyParameterFromQuery(Name = "participantId")] public Guid ParticipantId { get; set; }
+
+    private SessionParticipant? _participant;
+    private bool _editMode;
+    private bool _isBusy;
+    private string? _error;
+    
+    private bool _modalOpen;
+    private Item? _editedItem;
+    private string _formName = string.Empty;
+    private string? _formDescription;
+    private string? _formSourceUrl;
+    private int _formQuantity;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _participant = await SessionRepository.FindParticipantByIdWithItemsAsync(ParticipantId);
+    }
+    
+    private void OpenAddModal()
+    {
+        _editedItem = null;
+        _formName = string.Empty;
+        _formDescription = null;
+        _formSourceUrl = null;
+        _formQuantity = 1;
+        _modalOpen = true;
+    }
+    
+    private void OpenEditModal(Item item)
+    {
+        _editedItem = item;
+        _formName = item.Name;
+        _formDescription = item.Description;
+        _formSourceUrl = item.SourceUrl;
+        _formQuantity = item.Quantity;
+        _modalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        _modalOpen = false;
+        _error = null;
+    }
+
+    private async Task SaveItem()
+    {
+        if (string.IsNullOrWhiteSpace(_formName))
+        {
+            return;
+        }
+        
+        _isBusy = true;
+        _error = null;
+
+        if (_editedItem is null)
+        {
+            var result = await AddItemService.ExecuteAsync(
+                new AddItemCommand(
+                    ParticipantId,
+                    _formName,
+                    _formDescription,
+                    _formSourceUrl,
+                    _formQuantity));
+            
+            if (!result.IsSuccess)
+            {
+                _error = result.ErrorMessage;
+                _isBusy = false;
+                return;
+            }
+        }
+        else
+        {
+            var result = await UpdateItemService.ExecuteAsync(
+                new UpdateItemCommand(
+                    ParticipantId,
+                    _editedItem.Id,
+                    _formName,
+                    _formDescription,
+                    _formSourceUrl,
+                    _formQuantity));
+            
+            if (!result.IsSuccess)
+            {
+                _error = result.ErrorMessage;
+                _isBusy = false;
+                return;
+            }
+        }
+
+        _isBusy = false;
+        CloseModal();
+        await ReloadAsync();
+    }
+    
+    private async Task RemoveItem(Guid itemId)
+    {
+        _isBusy = true;
+        _error = null;
+
+        var result = await RemoveItemService.ExecuteAsync(
+            new RemoveItemCommand(ParticipantId, itemId));
+        
+        _isBusy = false;
+        
+        if (!result.IsSuccess)
+        {
+            _error = result.ErrorMessage;
+            return;
+        }
+
+        await ReloadAsync();
+    }
 }
