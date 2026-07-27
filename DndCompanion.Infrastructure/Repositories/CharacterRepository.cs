@@ -35,6 +35,23 @@ public sealed class CharacterRepository : ICharacterRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public Task<Character?> FindByIdWithItemsAsync(Guid characterId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Characters
+            .Where(x => x.Id == characterId)
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<Character?> FindByIdWithItemsAndResourcesAsync(Guid characterId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Characters
+            .Where(x => x.Id == characterId)
+            .Include(x => x.Resources)
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return _dbContext.SaveChangesAsync(cancellationToken);   

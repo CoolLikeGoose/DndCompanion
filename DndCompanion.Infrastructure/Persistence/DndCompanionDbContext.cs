@@ -15,6 +15,7 @@ public class DndCompanionDbContext : DbContext
     public DbSet<SessionParticipant> SessionParticipants => Set<SessionParticipant>();
     public DbSet<Character> Characters => Set<Character>();
     public DbSet<Resource> Resources => Set<Resource>();
+    public DbSet<Item> Items => Set<Item>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

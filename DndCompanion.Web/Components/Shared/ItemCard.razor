@@ -1,0 +1,49 @@
+﻿@using Domain.Entities
+
+<div class="card mb-2">
+    <div class="d-flex align-items-center p-2 gap-2" @onclick="ToggleExpanded">
+        <div class="flex-grow-1">
+            <div class="fw-semibold">@Item.Name</div>
+            @if (Item.Quantity > 1)
+            {
+                <div class="small text-muted">x@(Item.Quantity)</div>
+            }
+        </div>
+        
+        @if (IsEditMode)
+        {
+            <button class="btn btn-sm btn-outline-warning" @onclick:stopPropagation="true" @onclick="() => OnEdit.InvokeAsync(Item)">Edit</button>
+            <button class="btn btn-sm btn-outline-danger" @onclick:stopPropagation="true" @onclick="() => OnRemove.InvokeAsync(Item.Id)">Remove</button>
+        }
+        <i class="bi @(_expanded ? "bi-chevron-up" : "bi-chevron-down") text-muted"></i>
+    </div>
+    
+    @if (_expanded && !string.IsNullOrWhiteSpace(Item.Description))
+    {
+        <div class="px-3 pb-2 text-muted small border-top pt-2">@Item.Description</div>
+    }
+    @if (_expanded && !string.IsNullOrWhiteSpace(Item.SourceUrl))
+    {
+        <div class="px-3 pb-2">
+            @if (Item.SourceUrl?.StartsWith("https://") == true)
+            {
+                <a href="@Item.SourceUrl" target="_blank" class="small text-decoration-underline" rel="noopener noreferrer">Source</a>
+            }
+            else
+            {
+                <p class="text-muted">Invalid Source Link</p>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Item Item { get; set; } = null!;
+    [Parameter] public bool IsEditMode { get; set; }
+    [Parameter] public EventCallback<Item> OnEdit { get; set; }
+    [Parameter] public EventCallback<Guid> OnRemove { get; set; }
+
+    private bool _expanded;
+    
+    private void ToggleExpanded() => _expanded = !_expanded;
+}

@@ -5,4 +5,5 @@ public enum ResourceType
     HitPoints,
     HitDice,
     AbilitySlot,
+    ItemCharge,
 }

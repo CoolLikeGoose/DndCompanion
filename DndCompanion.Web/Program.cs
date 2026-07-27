@@ -4,6 +4,9 @@ using DndCompanion.Application.Abstractions.Persistence;
 using DndCompanion.Application.Features.Auth.Login;
 using DndCompanion.Application.Features.Auth.Register;
 using DndCompanion.Application.Features.Characters.CreateCharacter;
+using DndCompanion.Application.Features.Characters.Items.AddItem;
+using DndCompanion.Application.Features.Characters.Items.RemoveItem;
+using DndCompanion.Application.Features.Characters.Items.UpdateItem;
 using DndCompanion.Application.Features.Characters.Resources.AddAbilitySlot;
 using DndCompanion.Application.Features.Characters.Resources.ApplyRest;
 using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource;
@@ -45,20 +48,29 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddSingleton<SessionNotificationService>();
 
+// User
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<RegisterUserService>();
 builder.Services.AddScoped<LoginUserService>();
 
+// Session
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddScoped<ISessionRepository, SessionRepository>();
 builder.Services.AddScoped<CreateSessionService>();
 builder.Services.AddScoped<JoinSessionService>();
 
+// Character
 builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
 builder.Services.AddScoped<CreateCharacterService>();
 builder.Services.AddScoped<SelectCharacterService>();
 
+// >>>> items
+builder.Services.AddScoped<AddItemService>();
+builder.Services.AddScoped<RemoveItemService>();
+builder.Services.AddScoped<UpdateItemService>();
+
+// >>>> resources
 builder.Services.AddScoped<ChangeCharacterResourceService>();
 builder.Services.AddScoped<SetCharacterResourceService>();
 builder.Services.AddScoped<SetCharacterResourceMaxService>();
