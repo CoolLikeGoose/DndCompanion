@@ -51,7 +51,7 @@
 {
     <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" @onkeydown="@((KeyboardEventArgs e) => { if (e.Key == "Enter") InvokeAsync(SaveItem); })">
+            <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">@(_editedItem is null ? "Add item" : "Edit item")</h5>
                     <button type="button" class="btn-close" @onclick="CloseModal"></button>

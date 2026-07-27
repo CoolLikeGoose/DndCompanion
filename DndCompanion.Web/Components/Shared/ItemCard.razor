@@ -25,7 +25,14 @@
     @if (_expanded && !string.IsNullOrWhiteSpace(Item.SourceUrl))
     {
         <div class="px-3 pb-2">
-            <a href="@Item.SourceUrl" target="_blank" class="small text-decoration-underline">Source</a>
+            @if (Item.SourceUrl?.StartsWith("https://") == true)
+            {
+                <a href="@Item.SourceUrl" target="_blank" class="small text-decoration-underline" rel="noopener noreferrer">Source</a>
+            }
+            else
+            {
+                <p class="text-muted">Invalid Source Link</p>
+            }
         </div>
     }
 </div>

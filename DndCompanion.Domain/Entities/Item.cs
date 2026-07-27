@@ -30,10 +30,10 @@ public class Item
 
         var normalizedName = name.Trim();
         if (normalizedName.Length > 100) 
-            throw new ArgumentException("Name is too long(max 100 chars)", nameof(name));
+            throw new ArgumentException("Name is too long (max 100 chars)", nameof(name));
 
         if (quantity < 0)
-            throw new ArgumentException("Quantity must be a positive number", nameof(quantity));
+            throw new ArgumentException("Quantity must be a non-negative number", nameof(quantity));
 
         return new Item
         {
@@ -42,7 +42,8 @@ public class Item
             Name = normalizedName,
             Description = description?.Trim(),
             SourceUrl = sourceUrl?.Trim(),
-            Quantity = quantity
+            Quantity = quantity,
+            ChargeResourceId = chargeResourceId
         };
     }
     
