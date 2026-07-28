@@ -229,4 +229,10 @@ void ClearLastSessionCookies(HttpContext httpContext)
     httpContext.Response.Cookies.Delete(LastParticipantIdCookie);
 }
 
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<DndCompanionDbContext>();
+    dbContext.Database.Migrate();   
+}
+
 app.Run();
