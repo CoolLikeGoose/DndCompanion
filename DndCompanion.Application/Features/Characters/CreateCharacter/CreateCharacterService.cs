@@ -34,8 +34,8 @@ public sealed class CreateCharacterService
             character = Character.Create(command.Name, _currentUser.UserId);
             
             // Base resources
-            character.AddResource(ResourceType.HitPoints, 1, RecoveryType.LongRest);
-            character.AddResource(ResourceType.HitDice, 1, RecoveryType.LongRest);
+            character.AddResource(ResourceType.HitPoints, 10, RecoveryType.LongRest, "Hit Points");
+            character.AddResource(ResourceType.HitDice, 1, RecoveryType.LongRest, "Hit Dice");
         }
         catch (ArgumentException e)
         {

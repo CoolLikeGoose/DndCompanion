@@ -83,7 +83,7 @@ namespace Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     CharacterId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     Group = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
                     Type = table.Column<int>(type: "INTEGER", nullable: false),
                     CurrentValue = table.Column<int>(type: "INTEGER", nullable: false),

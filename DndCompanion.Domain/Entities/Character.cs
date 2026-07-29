@@ -43,7 +43,7 @@ public class Character
         ResourceType type, 
         int maximum, 
         RecoveryType recovery,
-        string? name = null,
+        string name,
         string? group = null,
         int? initialCurrent = null)
     {
@@ -54,21 +54,21 @@ public class Character
         _resources.Add(resource);   
     }
     
-    public Resource ChangeResource(ResourceType type, string? name, int delta)
+    public Resource ChangeResource(ResourceType type, string name, int delta)
     {
         var resource = GetResource(type, name);
         resource.Change(delta);
         return resource;
     }
     
-    public Resource SetResource(ResourceType type, string? name, int value)
+    public Resource SetResource(ResourceType type, string name, int value)
     {
         var resource = GetResource(type, name);
         resource.SetCurrent(value);
         return resource;
     }
 
-    public Resource SetResourceMaximum(ResourceType type, string? name, int maximum, bool fillToMaxIfReduced = true)
+    public Resource SetResourceMaximum(ResourceType type, string name, int maximum, bool fillToMaxIfReduced = true)
     {
         var resource = GetResource(type, name);
         resource.SetMax(maximum, fillToMaxIfReduced);
