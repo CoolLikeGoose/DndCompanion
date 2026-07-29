@@ -1,0 +1,251 @@
+﻿@page "/sessions/{SessionId:guid}/character"
+@using DndCompanion.Application.Abstractions.Persistence
+@using DndCompanion.Application.Features.Characters.Resources.AddAbilitySlot
+@using DndCompanion.Application.Features.Characters.Resources.ApplyRest
+@using Web.Components.Shared
+@using Domain.Entities
+@using Web.Components.Pages.Sessions.Game.Player.Modals
+@using Web.Components.Pages.Sessions.Game.Player.Models
+@using Domain.Enums
+
+@inject ISessionRepository SessionRepository
+
+@inject SessionNotificationService SessionNotificationService
+
+@inject AddAbilitySlotService AddAbilitySlotService
+@inject ApplyRestService ApplyRestService
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-9">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div>
+                        <h2 class="mb-0">@_participant.Character.Name</h2>
+                        <span class="badge bg-secondary">@_participant.Role</span>
+                    </div>
+                    <div class="ms-auto">
+                        <button class="btn btn-primary" @onclick="ApplyLongRest" disabled="@_isBusy">Long Rest</button>
+                        <button class="btn btn-primary" @onclick="() => _globalEdit = !_globalEdit">
+                            @(_globalEdit ? "Cancel" : "Edit Resources")
+                        </button>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_resourceError))
+                {
+                    <div class="alert alert-danger" role="alert">@_resourceError</div>
+                }
+
+                @* Core resources *@
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="card bg-light h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h5 class="mb-0">Core resources</h5>
+                                    @* <span class="badge bg-dark">Live</span> *@
+                                </div>
+
+                                @{
+                                    var hp = FindResource(ResourceType.HitPoints, null);
+                                }
+                                <ResourceCard
+                                    Label="Hit Points"
+                                    CurrentValue="@(hp?.CurrentValue ?? 0)"
+                                    MaxValue="@(hp?.MaxValue ?? 0)"
+                                    IsGlobalEditMode="_globalEdit"
+                                    Disabled="_isBusy"
+                                    OnEditClick='() => OpenEditorModal(ResourceType.HitPoints, null, "Hit Points")'/>
+
+                                @{
+                                    var hitDice = FindResource(ResourceType.HitDice, null);
+                                }
+                                <ResourceCard
+                                    Label="Hit Dice"
+                                    CurrentValue="@(hitDice?.CurrentValue ?? 0)"
+                                    MaxValue="@(hitDice?.MaxValue ?? 0)"
+                                    IsGlobalEditMode="_globalEdit"
+                                    Disabled="_isBusy"
+                                    OnEditClick='() => OpenEditorModal(ResourceType.HitDice, null, "Hit Dice")'/>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Ability slots *@
+                    <div class="col-12 col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body py-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h5 class="mb-0">Abilities</h5>
+                                </div>
+
+                                @foreach (var group in _participant.Character.Resources
+                                                  .Where(r => r.Type == ResourceType.AbilitySlot)
+                                                  .GroupBy(r => r.Group ?? "Abilities")
+                                                  .OrderBy(g => g.Key))
+                                {
+                                    <div>
+                                        @* <div class="col-12 col-md-6"> *@
+                                        @*     <div class="card bg-light"> *@
+                                        @*         <div class="card-body"> *@
+                                        <h6 class="text-muted mb-2">@group.Key</h6>
+                                        @foreach (var resource in group)
+                                        {
+                                            <ResourceCard
+                                                Label="@(resource.Name ?? resource.Type.ToString())"
+                                                CurrentValue="@(resource.CurrentValue)"
+                                                MaxValue="@(resource.MaxValue)"
+                                                Disabled="_isBusy"
+                                                IsGlobalEditMode="_globalEdit"
+                                                OnEditClick='() => OpenEditorModal(ResourceType.AbilitySlot, resource.Name, resource.Name ?? "Ability")'/>
+                                        }
+                                        @if (_globalEdit)
+                                        {
+                                            <button class="btn btn-sm btn-outline-primary w-100 h-100 mb-2"
+                                                    @onclick="() => OpenAddAbilityModal(group.Key)">
+                                                + New ability
+                                            </button>
+                                        }
+                                    </div>
+                                }
+
+                                @if (_globalEdit)
+                                {
+                                    <button class="btn btn-outline-secondary w-100 h-100"
+                                            @onclick="() => OpenAddAbilityModal(null)">
+                                        + New group
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Other staff *@
+                    <div class="col-6 col-md-3">
+                        <div class="card text-center bg-light">
+                            <div class="card-body py-3">
+                                <div class="fs-4 fw-bold text-muted">—</div>
+                                <div class="small text-muted">WIP</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<EditorModal @ref="_editorModal" ParticipantId="ParticipantId" IsGlobalEdit="_globalEdit" OnSaved="HandleSaved"/>
+
+<AddAbilityModal @ref="_addAbilityModal" IsBusy="_isBusy" OnAdd="HandleAddAbility"/>
+
+<SessionNavBar SessionId="SessionId" ParticipantId="ParticipantId"/>
+
+@code {
+    [Parameter] public Guid SessionId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "participantId")]
+    public Guid ParticipantId { get; set; }
+
+    private SessionParticipant? _participant;
+    private bool _loadFailed;
+    private bool _isBusy;
+    private string? _resourceError;
+    
+    // editor
+    private bool _globalEdit = false;
+    private EditorModal _editorModal = null!;
+    
+    // ability
+    private AddAbilityModal _addAbilityModal = null!;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadParticipantAsync();
+        await SessionNotificationService.NotifyAsync(SessionId);
+    }
+
+    private Resource? FindResource(ResourceType type, string? name)
+    {
+        return _participant?.Character?.Resources
+            .FirstOrDefault(x => x.Type == type && x.Name == name);
+    }
+    
+    // Ability
+    private void OpenAddAbilityModal(string? group)
+    {
+        _addAbilityModal.Open(group);
+    }
+
+    private async Task HandleAddAbility(AddAbilityData data)
+    {
+        _isBusy = true;
+        var result = await AddAbilitySlotService.ExecuteAsync(
+            new AddAbilitySlotCommand(ParticipantId, data.Name, data.Group, data.MaxValue, RecoveryType.LongRest));
+        _isBusy = false;
+
+        if (!result.IsSuccess)
+        {
+            _resourceError = result.ErrorMessage;
+            return;
+        }
+
+        await ReloadParticipantAsync();
+        await SessionNotificationService.NotifyAsync(SessionId);
+    }
+    
+    // Editor
+    private void OpenEditorModal(ResourceType type, string? name, string label)
+    {
+        var resource = FindResource(type, name);
+        if (resource is null)
+        {
+            _resourceError = $"{label} resource is not initialized yet.";
+            return;
+        }
+        
+        _editorModal.Open(resource, label);
+    }
+
+    private async Task HandleSaved()
+    {
+        await ReloadParticipantAsync();
+        await SessionNotificationService.NotifyAsync(SessionId);
+    }
+    
+    private async Task ReloadParticipantAsync()
+    {
+        _loadFailed = false;
+        _participant = await SessionRepository.FindParticipantByIdAsync(ParticipantId);
+
+        if (_participant is not null && _participant.SessionId != SessionId)
+        {
+            _participant = null;
+            _loadFailed = true;
+        }
+
+        _resourceError = null;
+    }
+
+    private async Task ApplyLongRest()
+    {
+        _isBusy = true;
+        _resourceError = null;
+
+        var result = await ApplyRestService.ExecuteAsync(
+            new ApplyRestCommand(ParticipantId, RecoveryType.LongRest, true));
+
+        _isBusy = false;
+
+        if (!result.IsSuccess)
+        {
+            _resourceError = result.ErrorMessage;
+            return;
+        }
+
+        await ReloadParticipantAsync();
+        await SessionNotificationService.NotifyAsync(SessionId);
+    }
+}

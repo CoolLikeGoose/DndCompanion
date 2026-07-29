@@ -1,0 +1,232 @@
+﻿@using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource
+@using DndCompanion.Application.Features.Characters.Resources.SetCharacterResource
+@using DndCompanion.Application.Features.Characters.Resources.SetCharacterResourceMax
+@using Domain.Entities
+@using Domain.Enums
+
+@inject ChangeCharacterResourceService ChangeCharacterResourceService
+@inject SetCharacterResourceService SetCharacterResourceService
+@inject SetCharacterResourceMaxService SetCharacterResourceMaxService
+
+@if (_modalOpen)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit @_selectedResourceLabel</h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditor"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-1">
+                        <span class="small text-muted">Current</span>
+                        <div class="fs-5 fw-bold">@FormatResource(_resource)</div>
+                    </div>
+                    
+                    @if (IsGlobalEdit)
+                    {
+                        <div class="text-muted mb-1">Set new maximum</div>
+                        <div class="input-group">
+                            <input type="number" class="form-control" @bind="_setMaxValue"/>
+                            <button class="btn btn-secondary" @onclick="ApplySetMax" disabled="@_isBusy">
+                                Set max
+                            </button>
+                        </div>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="fillToMax" @bind="_fillToMax"/>
+                            <label class="form-check-label" for="fillToMax">
+                                Fill to new maximum
+                            </label>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="btn-group mb-1" role="group">
+                            <button
+                                class="btn btn-outline-primary @(_editMode == EditMode.Change ? "active" : string.Empty)"
+                                @onclick="() => _editMode = EditMode.Change">
+                                Change
+                            </button>
+                            <button
+                                class="btn btn-outline-primary @(_editMode == EditMode.Set ? "active" : string.Empty)"
+                                @onclick="() => _editMode = EditMode.Set">
+                                Set
+                            </button>
+                        </div>
+
+                        @if (_editMode == EditMode.Change)
+                        {
+                            <div class="text-muted mb-1">Adjust value with buttons, or change it manually (e.g. +13/-8)</div>
+                            <div class="mb-2 d-flex flex-wrap gap-2">
+                                <button class="btn btn-outline-danger" @onclick="() => QuickChange(-10)"
+                                        disabled="@_isBusy">-10
+                                </button>
+                                <button class="btn btn-outline-danger" @onclick="() => QuickChange(-5)"
+                                        disabled="@_isBusy">-5
+                                </button>
+                                <button class="btn btn-outline-danger" @onclick="() => QuickChange(-1)"
+                                        disabled="@_isBusy">-1
+                                </button>
+                                <button class="btn btn-outline-success" @onclick="() => QuickChange(1)"
+                                        disabled="@_isBusy">+1
+                                </button>
+                                <button class="btn btn-outline-success" @onclick="() => QuickChange(5)"
+                                        disabled="@_isBusy">+5
+                                </button>
+                                <button class="btn btn-outline-success" @onclick="() => QuickChange(10)"
+                                        disabled="@_isBusy">+10
+                                </button>
+                            </div>
+
+                            <div class="input-group">
+                                <input type="number" class="form-control" @bind="_changeDelta"/>
+                                <button class="btn btn-primary" @onclick="ApplyChangeDelta" disabled="@_isBusy">Apply
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-muted mb-1">Set current value to a specific value</div>
+                            <div class="input-group mb-2">
+                                <input type="number" class="form-control" @bind="_setCurrentValue"/>
+                                <button class="btn btn-primary" @onclick="ApplySetCurrent" disabled="@_isBusy">Set
+                                    current
+                                </button>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public Guid ParticipantId { get; set; }
+    [Parameter] public bool IsGlobalEdit { get; set; }
+    [Parameter] public string? ResourceError { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+    
+    private enum EditMode
+    {
+        Change,
+        Set
+    }
+    
+    private bool _modalOpen = false;
+    
+    private bool _isBusy;
+
+    private Resource? _resource;
+    private EditMode _editMode = EditMode.Change;
+    private ResourceType _selectedResourceType;
+    private string? _selectedName;
+    private string _selectedResourceLabel = string.Empty;
+    private bool _fillToMax = true;
+   
+    private int _changeDelta = 1;
+    private int _setCurrentValue;
+    private int _setMaxValue;
+
+    public void Open(Resource resource, string label)
+    {
+        _selectedResourceType = resource.Type;
+        _selectedName = resource.Name;
+        _selectedResourceLabel = label;
+        _changeDelta = 1;
+        _setCurrentValue = resource.CurrentValue;
+        _setMaxValue = resource.MaxValue;
+        _editMode = EditMode.Change;
+        _modalOpen = true;
+        _resource = resource;
+        ResourceError = null;
+        
+        StateHasChanged();
+    }
+    
+    private Task QuickChange(int delta)
+    {
+        return ExecuteChangeAsync(delta);
+    }
+
+    private Task ApplyChangeDelta()
+    {
+        return ExecuteChangeAsync(_changeDelta);
+    }
+    
+    private async Task ExecuteChangeAsync(int delta)
+    {
+        _isBusy = true;
+        ResourceError = null;
+
+        var result = await ChangeCharacterResourceService.ExecuteAsync(
+            new ChangeCharacterResourceCommand(ParticipantId, _selectedResourceType, _selectedName, delta));
+
+        _isBusy = false;
+
+        if (!result.IsSuccess)
+        {
+            ResourceError = result.ErrorMessage;
+            return;
+        }
+        
+        if (result.CurrentValue.HasValue)
+            _setCurrentValue = result.CurrentValue.Value;
+
+        await OnSaved.InvokeAsync();
+    }
+
+    private async Task ApplySetCurrent()
+    {
+        _isBusy = true;
+        ResourceError = null;
+
+        var result = await SetCharacterResourceService.ExecuteAsync(
+            new SetCharacterResourceCommand(ParticipantId, _selectedResourceType, _selectedName, _setCurrentValue));
+
+        _isBusy = false;
+
+        if (!result.IsSuccess)
+        {
+            ResourceError = result.ErrorMessage;
+            return;
+        }
+
+        await OnSaved.InvokeAsync();
+        CloseEditor();
+    }
+
+    private async Task ApplySetMax()
+    {
+        _isBusy = true;
+        ResourceError = null;
+
+        var result = await SetCharacterResourceMaxService.ExecuteAsync(
+            new SetCharacterResourceMaxCommand(ParticipantId, _selectedResourceType, _selectedName, _setMaxValue, _fillToMax));
+
+        _isBusy = false;
+
+        if (!result.IsSuccess)
+        {
+            ResourceError = result.ErrorMessage;
+            return;
+        }
+
+        await OnSaved.InvokeAsync();
+        CloseEditor();
+    }
+    
+    private void CloseEditor()
+    {
+        _modalOpen = false;
+        ResourceError = null;
+    }
+    
+    private string FormatResource(Resource? resource)
+    {
+        return resource is null ? "-" : $"{resource.CurrentValue}/{resource.MaxValue}";
+    }
+}

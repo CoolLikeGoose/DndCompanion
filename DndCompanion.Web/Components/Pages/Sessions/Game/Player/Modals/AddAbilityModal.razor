@@ -1,0 +1,88 @@
+﻿@using Domain.Enums
+@using Web.Components.Pages.Sessions.Game.Player.Models
+
+@if (_modalOpen)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" @onkeydown="@((KeyboardEventArgs e) =>
+                                                   {
+                                                       if (e.Key == "Enter") InvokeAsync(HandleAdd);
+                                                   })">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add ability slot</h5>
+                    <button type="button" class="btn-close" @onclick="() => _modalOpen = false"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="abilityName" class="form-label">Name</label>
+                        <input type="text" class="form-control" @bind="_name"
+                               placeholder="e.g. Rage, Lvl 1, Chaos points"/>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="abilityGroup" class="form-label">Group</label>
+                        <input type="text" id="abilityGroup" class="form-control" @bind="_group"
+                               placeholder="e.g. Spell Slots"/>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="abilityMax" class="form-label">Max slots</label>
+                        <input type="number" id="abilityMax" class="form-control" @bind="_maxCharges" min="1"/>
+                    </div>
+
+                    @* <div class="mb-3"> *@
+                    @*     <label for="abilityRecoveryType" class="form-label">Recovery type</label> *@
+                    @*     <select id="abilityRecoveryType" class="form-select" @bind="_addAbilityRecoveryType"> *@
+                    @*         @foreach (var recoveryType in Enum.GetValues<RecoveryType>()) *@
+                    @*         { *@
+                    @*             <option value="@recoveryType">@recoveryType</option> *@
+                    @*         } *@
+                    @*     </select> *@
+                    @* </div> *@
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="() => _modalOpen = false">Cancel</button>
+                        <button class="btn btn-primary" @onclick="HandleAdd" disabled="@IsBusy">Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public bool IsBusy { get; set; }
+    [Parameter] public EventCallback<AddAbilityData> OnAdd { get; set; }
+
+    private bool _modalOpen = false;
+
+    private string _name = string.Empty;
+    private string _group = string.Empty;
+    private int _maxCharges = 1;
+    private RecoveryType _addAbilityRecoveryType = RecoveryType.LongRest;
+
+    public void Open(string? group)
+    {
+        _modalOpen = true;
+        
+        _name = string.Empty;
+        _group = group ?? string.Empty;
+        _maxCharges = 1;
+        
+        StateHasChanged();
+    }
+
+    private async Task HandleAdd()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+            return;
+
+        await OnAdd.InvokeAsync(new AddAbilityData(_name, _group, _maxCharges));
+        _modalOpen = false;
+    }
+
+}
