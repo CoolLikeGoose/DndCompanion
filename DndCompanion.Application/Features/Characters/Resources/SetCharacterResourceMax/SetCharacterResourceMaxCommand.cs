@@ -5,6 +5,6 @@ namespace DndCompanion.Application.Features.Characters.Resources.SetCharacterRes
 public sealed record SetCharacterResourceMaxCommand(
     Guid ParticipantId,
     ResourceType ResourceType,
-    string? Name,
+    string Name,
     int Value,
     bool FillToMax = true);

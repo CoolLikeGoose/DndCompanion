@@ -31,6 +31,9 @@ public class Resource
         if (characterId == Guid.Empty) 
             throw new ArgumentException("Character ID is required", nameof(characterId));
         
+        if (string.IsNullOrWhiteSpace(name)) 
+            throw new ArgumentException("Name is required", nameof(name));
+        
         if (maxValue < 0) 
             throw new ArgumentException("Max value cannot be negative", nameof(maxValue));
         
