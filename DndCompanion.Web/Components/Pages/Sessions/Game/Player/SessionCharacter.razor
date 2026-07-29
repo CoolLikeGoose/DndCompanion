@@ -48,26 +48,22 @@
                                 </div>
 
                                 @{
-                                    var hp = FindResource(ResourceType.HitPoints, null);
+                                    var hp = FindResource(ResourceType.HitPoints, StaticResourceNames.HitPoints);
                                 }
                                 <ResourceCard
-                                    Label="Hit Points"
-                                    CurrentValue="@(hp?.CurrentValue ?? 0)"
-                                    MaxValue="@(hp?.MaxValue ?? 0)"
+                                    Resource="hp"
                                     IsGlobalEditMode="_globalEdit"
                                     Disabled="_isBusy"
-                                    OnEditClick='() => OpenEditorModal(ResourceType.HitPoints, null, "Hit Points")'/>
+                                    OnEditClick='() => OpenEditorModal(ResourceType.HitPoints, StaticResourceNames.HitPoints)'/>
 
                                 @{
-                                    var hitDice = FindResource(ResourceType.HitDice, null);
+                                    var hitDice = FindResource(ResourceType.HitDice, StaticResourceNames.HitDice);
                                 }
                                 <ResourceCard
-                                    Label="Hit Dice"
-                                    CurrentValue="@(hitDice?.CurrentValue ?? 0)"
-                                    MaxValue="@(hitDice?.MaxValue ?? 0)"
+                                    Resource="hitDice"
                                     IsGlobalEditMode="_globalEdit"
                                     Disabled="_isBusy"
-                                    OnEditClick='() => OpenEditorModal(ResourceType.HitDice, null, "Hit Dice")'/>
+                                    OnEditClick='() => OpenEditorModal(ResourceType.HitDice, StaticResourceNames.HitDice)'/>
                             </div>
                         </div>
                     </div>
@@ -93,12 +89,10 @@
                                         @foreach (var resource in group)
                                         {
                                             <ResourceCard
-                                                Label="@(resource.Name ?? resource.Type.ToString())"
-                                                CurrentValue="@(resource.CurrentValue)"
-                                                MaxValue="@(resource.MaxValue)"
+                                                Resource="resource"
                                                 Disabled="_isBusy"
                                                 IsGlobalEditMode="_globalEdit"
-                                                OnEditClick='() => OpenEditorModal(ResourceType.AbilitySlot, resource.Name, resource.Name ?? "Ability")'/>
+                                                OnEditClick='() => OpenEditorModal(ResourceType.AbilitySlot, resource.Name)'/>
                                         }
                                         @if (_globalEdit)
                                         {
@@ -153,14 +147,14 @@
     private bool _loadFailed;
     private bool _isBusy;
     private string? _resourceError;
-    
+
     // editor
     private bool _globalEdit = false;
     private EditorModal _editorModal = null!;
-    
+
     // ability
     private AddAbilityModal _addAbilityModal = null!;
-    
+
     protected override async Task OnInitializedAsync()
     {
         await ReloadParticipantAsync();
@@ -172,7 +166,7 @@
         return _participant?.Character?.Resources
             .FirstOrDefault(x => x.Type == type && x.Name == name);
     }
-    
+
     // Ability
     private void OpenAddAbilityModal(string? group)
     {
@@ -195,18 +189,18 @@
         await ReloadParticipantAsync();
         await SessionNotificationService.NotifyAsync(SessionId);
     }
-    
+
     // Editor
-    private void OpenEditorModal(ResourceType type, string? name, string label)
+    private void OpenEditorModal(ResourceType type, string name)
     {
         var resource = FindResource(type, name);
         if (resource is null)
         {
-            _resourceError = $"{label} resource is not initialized yet.";
+            _resourceError = $"{name} resource is not initialized yet.";
             return;
         }
-        
-        _editorModal.Open(resource, label);
+
+        _editorModal.Open(resource);
     }
 
     private async Task HandleSaved()
@@ -214,7 +208,7 @@
         await ReloadParticipantAsync();
         await SessionNotificationService.NotifyAsync(SessionId);
     }
-    
+
     private async Task ReloadParticipantAsync()
     {
         _loadFailed = false;
@@ -248,4 +242,5 @@
         await ReloadParticipantAsync();
         await SessionNotificationService.NotifyAsync(SessionId);
     }
+
 }

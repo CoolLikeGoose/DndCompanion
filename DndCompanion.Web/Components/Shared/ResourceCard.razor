@@ -1,26 +1,27 @@
-﻿<div class="mb-2 d-flex card p-2">
+﻿@using Domain.Entities
+<div class="mb-2 d-flex card p-2">
     <div class="d-flex gap-3 align-items-center">
         <div class="flex-grow-1">
-            <div class="small text-muted">@Label</div>
+            <div class="small text-muted">@Resource.Name</div>
             @if (UseSlots)
-            {   
+            {
                 <div class="d-flex flex-wrap gap-1 mt-1">
-                    @for (var i = 0; i < MaxValue; i++)
+                    @for (var i = 0; i < Resource.MaxValue; i++)
                     {
-                        var filled = i < CurrentValue;
+                        var filled = i < Resource.CurrentValue;
                         <span style="
-                        width: 18px; 
-                        height: 18px; 
-                        border-radius: 50%;
-                        display: inline-block; 
-                        border: 2px solid #0d6efd;
-                        background: @(filled ? "#0d6efd" : "transparent");"></span>
+                            width: 18px;
+                            height: 18px;
+                            border-radius: 50%;
+                            display: inline-block;
+                            border: 2px solid #0d6efd;
+                            background: @(filled ? "#0d6efd" : "transparent");"></span>
                     }
                 </div>
             }
             else
             {
-                <div class="fs-5 fw-semibold">@CurrentValue/@MaxValue</div>
+                <div class="fs-5 fw-semibold">@Resource.CurrentValue/@Resource.MaxValue</div>
             }
         </div>
         <button class="btn ms-auto @(IsGlobalEditMode ? "btn-outline-warning" : "btn-primary")"
@@ -31,12 +32,10 @@
 </div>
 
 @code {
-    [Parameter] public string Label { get; set; } = string.Empty;
-    [Parameter] public int CurrentValue { get; set; }
-    [Parameter] public int MaxValue { get; set; }
+    [Parameter] public Resource Resource { get; set; } = null!;
     [Parameter] public bool IsGlobalEditMode { get; set; } = false;
     [Parameter] public EventCallback OnEditClick { get; set; }
     [Parameter] public bool Disabled { get; set; } = false;
-    
-    private bool UseSlots => MaxValue is > 0 and <= 10;
+
+    private bool UseSlots => Resource.MaxValue is > 0 and <= 10;
 }

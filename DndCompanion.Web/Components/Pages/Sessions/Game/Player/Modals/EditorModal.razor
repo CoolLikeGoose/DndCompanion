@@ -2,7 +2,6 @@
 @using DndCompanion.Application.Features.Characters.Resources.SetCharacterResource
 @using DndCompanion.Application.Features.Characters.Resources.SetCharacterResourceMax
 @using Domain.Entities
-@using Domain.Enums
 
 @inject ChangeCharacterResourceService ChangeCharacterResourceService
 @inject SetCharacterResourceService SetCharacterResourceService
@@ -14,16 +13,20 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit @_selectedResourceLabel</h5>
+                    <h5 class="modal-title">Edit @_resource.Name</h5>
                     <button type="button" class="btn-close" @onclick="CloseEditor"></button>
                 </div>
 
                 <div class="modal-body">
+                    @if (_error is not null)
+                    {
+                        <div class="alert alert-danger mt-2">@_error</div>
+                    }
                     <div class="mb-1">
                         <span class="small text-muted">Current</span>
                         <div class="fs-5 fw-bold">@FormatResource(_resource)</div>
                     </div>
-                    
+
                     @if (IsGlobalEdit)
                     {
                         <div class="text-muted mb-1">Set new maximum</div>
@@ -57,31 +60,34 @@
 
                         @if (_editMode == EditMode.Change)
                         {
-                            <div class="text-muted mb-1">Adjust value with buttons, or change it manually (e.g. +13/-8)</div>
+                            <div class="text-muted mb-1">Adjust value with buttons, or change it manually (e.g.
+                                +13/-8)
+                            </div>
                             <div class="mb-2 d-flex flex-wrap gap-2">
-                                <button class="btn btn-outline-danger" @onclick="() => QuickChange(-10)"
+                                <button class="btn btn-outline-danger" @onclick="() => ExecuteChangeAsync(-10)"
                                         disabled="@_isBusy">-10
                                 </button>
-                                <button class="btn btn-outline-danger" @onclick="() => QuickChange(-5)"
+                                <button class="btn btn-outline-danger" @onclick="() => ExecuteChangeAsync(-5)"
                                         disabled="@_isBusy">-5
                                 </button>
-                                <button class="btn btn-outline-danger" @onclick="() => QuickChange(-1)"
+                                <button class="btn btn-outline-danger" @onclick="() => ExecuteChangeAsync(-1)"
                                         disabled="@_isBusy">-1
                                 </button>
-                                <button class="btn btn-outline-success" @onclick="() => QuickChange(1)"
+                                <button class="btn btn-outline-success" @onclick="() => ExecuteChangeAsync(1)"
                                         disabled="@_isBusy">+1
                                 </button>
-                                <button class="btn btn-outline-success" @onclick="() => QuickChange(5)"
+                                <button class="btn btn-outline-success" @onclick="() => ExecuteChangeAsync(5)"
                                         disabled="@_isBusy">+5
                                 </button>
-                                <button class="btn btn-outline-success" @onclick="() => QuickChange(10)"
+                                <button class="btn btn-outline-success" @onclick="() => ExecuteChangeAsync(10)"
                                         disabled="@_isBusy">+10
                                 </button>
                             </div>
 
                             <div class="input-group">
                                 <input type="number" class="form-control" @bind="_changeDelta"/>
-                                <button class="btn btn-primary" @onclick="ApplyChangeDelta" disabled="@_isBusy">Apply
+                                <button class="btn btn-primary" @onclick="() => ExecuteChangeAsync(_changeDelta)"
+                                        disabled="@_isBusy">Apply
                                 </button>
                             </div>
                         }
@@ -107,126 +113,97 @@
 @code {
     [Parameter] public Guid ParticipantId { get; set; }
     [Parameter] public bool IsGlobalEdit { get; set; }
-    [Parameter] public string? ResourceError { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
-    
+
     private enum EditMode
     {
         Change,
         Set
     }
-    
-    private bool _modalOpen = false;
-    
-    private bool _isBusy;
 
-    private Resource? _resource;
+    private bool _modalOpen = false;
+
+    private bool _isBusy;
+    private string? _error;
+
+    private Resource _resource = null!;
     private EditMode _editMode = EditMode.Change;
-    private ResourceType _selectedResourceType;
-    private string? _selectedName;
-    private string _selectedResourceLabel = string.Empty;
     private bool _fillToMax = true;
-   
+
     private int _changeDelta = 1;
     private int _setCurrentValue;
     private int _setMaxValue;
 
-    public void Open(Resource resource, string label)
+    public void Open(Resource resource)
     {
-        _selectedResourceType = resource.Type;
-        _selectedName = resource.Name;
-        _selectedResourceLabel = label;
         _changeDelta = 1;
         _setCurrentValue = resource.CurrentValue;
         _setMaxValue = resource.MaxValue;
         _editMode = EditMode.Change;
         _modalOpen = true;
         _resource = resource;
-        ResourceError = null;
-        
+        _error = null;
+
         StateHasChanged();
     }
-    
-    private Task QuickChange(int delta)
-    {
-        return ExecuteChangeAsync(delta);
-    }
 
-    private Task ApplyChangeDelta()
+    private Task ExecuteChangeAsync(int delta) => ExecuteAsync(async () =>
     {
-        return ExecuteChangeAsync(_changeDelta);
-    }
-    
-    private async Task ExecuteChangeAsync(int delta)
-    {
-        _isBusy = true;
-        ResourceError = null;
-
         var result = await ChangeCharacterResourceService.ExecuteAsync(
-            new ChangeCharacterResourceCommand(ParticipantId, _selectedResourceType, _selectedName, delta));
+            new ChangeCharacterResourceCommand(ParticipantId, _resource.Type, _resource.Name, delta));
+        return (result.IsSuccess, result.ErrorMessage, result.CurrentValue);
+    });
 
-        _isBusy = false;
-
-        if (!result.IsSuccess)
+    private Task ApplySetCurrent() => ExecuteAsync(async () =>
         {
-            ResourceError = result.ErrorMessage;
-            return;
-        }
-        
-        if (result.CurrentValue.HasValue)
-            _setCurrentValue = result.CurrentValue.Value;
+            var result = await SetCharacterResourceService.ExecuteAsync(
+                new SetCharacterResourceCommand(ParticipantId, _resource.Type, _resource.Name, _setCurrentValue));
+            return (result.IsSuccess, result.ErrorMessage, result.CurrentValue);
+        },
+        closeOnSuccess: true);
 
-        await OnSaved.InvokeAsync();
-    }
+    private Task ApplySetMax() => ExecuteAsync(async () =>
+        {
+            var result = await SetCharacterResourceMaxService.ExecuteAsync(
+                new SetCharacterResourceMaxCommand(ParticipantId, _resource.Type, _resource.Name, _setMaxValue, _fillToMax));
+            return (result.IsSuccess, result.ErrorMessage, result.CurrentValue);
+        },
+        closeOnSuccess: true);
 
-    private async Task ApplySetCurrent()
+
+    private async Task ExecuteAsync(Func<Task<(bool IsSuccess, string? ErrorMessage, int? CurrentValue)>> action, bool closeOnSuccess = false)
     {
         _isBusy = true;
-        ResourceError = null;
+        _error = null;
 
-        var result = await SetCharacterResourceService.ExecuteAsync(
-            new SetCharacterResourceCommand(ParticipantId, _selectedResourceType, _selectedName, _setCurrentValue));
-
-        _isBusy = false;
-
-        if (!result.IsSuccess)
-        {
-            ResourceError = result.ErrorMessage;
-            return;
-        }
-
-        await OnSaved.InvokeAsync();
-        CloseEditor();
-    }
-
-    private async Task ApplySetMax()
-    {
-        _isBusy = true;
-        ResourceError = null;
-
-        var result = await SetCharacterResourceMaxService.ExecuteAsync(
-            new SetCharacterResourceMaxCommand(ParticipantId, _selectedResourceType, _selectedName, _setMaxValue, _fillToMax));
+        var (isSuccess, errorMessage, currentValue) = await action();
 
         _isBusy = false;
 
-        if (!result.IsSuccess)
+        if (!isSuccess)
         {
-            ResourceError = result.ErrorMessage;
+            _error = errorMessage;
             return;
         }
 
+        if (currentValue.HasValue)
+            _setCurrentValue = currentValue.Value;
+
         await OnSaved.InvokeAsync();
-        CloseEditor();
+
+        if (closeOnSuccess)
+            CloseEditor();
     }
-    
+
     private void CloseEditor()
     {
         _modalOpen = false;
-        ResourceError = null;
+        _error = null;
     }
-    
+
     private string FormatResource(Resource? resource)
     {
         return resource is null ? "-" : $"{resource.CurrentValue}/{resource.MaxValue}";
     }
+
 }
