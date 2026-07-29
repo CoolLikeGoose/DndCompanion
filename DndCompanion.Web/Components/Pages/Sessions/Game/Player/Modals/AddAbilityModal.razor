@@ -81,7 +81,7 @@
         if (string.IsNullOrWhiteSpace(_name))
             return;
 
-        await OnAdd.InvokeAsync(new AddAbilityData(_name, _group, _maxCharges));
+        await OnAdd.InvokeAsync(new AddAbilityData(_name, _group, _maxCharges, _addAbilityRecoveryType));
         _modalOpen = false;
     }
 
