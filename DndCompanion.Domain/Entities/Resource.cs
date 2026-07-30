@@ -12,7 +12,7 @@ public class Resource
     // Resources are identified by their type and name. The ID is only used for database purposes.
     public Guid Id { get; private set; }
     public Guid CharacterId { get; private set; }
-    public string Name { get; private set; }
+    public string Name { get; private set; } = string.Empty;
     public string? Group { get; private set; }
     public ResourceType Type { get; private set; }
     public int CurrentValue { get; private set; }
