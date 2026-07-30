@@ -33,6 +33,10 @@ body:
       label: Current behavior
     validations:
       required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed solution
   - type: input
     id: os
     attributes:
