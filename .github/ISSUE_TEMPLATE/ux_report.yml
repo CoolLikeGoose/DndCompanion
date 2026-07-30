@@ -1,0 +1,27 @@
+﻿name: UX Issue
+description: Something works but feels wrong or confusing
+labels: ["ux"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: What feels wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Current behavior
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
