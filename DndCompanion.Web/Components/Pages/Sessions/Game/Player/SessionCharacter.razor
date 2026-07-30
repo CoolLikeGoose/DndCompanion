@@ -15,7 +15,7 @@
 @inject AddAbilitySlotService AddAbilitySlotService
 @inject ApplyRestService ApplyRestService
 
-@if (!_loadFailed)
+@if (_loadFailed)
 {
     <div class="alert alert-danger" role="alert">Failed to reload participants</div>
 }
