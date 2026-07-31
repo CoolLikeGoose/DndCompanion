@@ -13,6 +13,8 @@ using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterReso
 using DndCompanion.Application.Features.Characters.Resources.SetCharacterResource;
 using DndCompanion.Application.Features.Characters.Resources.SetCharacterResourceMax;
 using DndCompanion.Application.Features.Characters.SelectCharacter;
+using DndCompanion.Application.Features.Characters.UpdateInfo;
+using DndCompanion.Application.Features.Characters.UpdateStats;
 using DndCompanion.Application.Features.Sessions.CreateSession;
 using DndCompanion.Application.Features.Sessions.JoinSession;
 using Infrastructure.Identity;
@@ -64,6 +66,8 @@ builder.Services.AddScoped<JoinSessionService>();
 builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
 builder.Services.AddScoped<CreateCharacterService>();
 builder.Services.AddScoped<SelectCharacterService>();
+builder.Services.AddScoped<UpdateInfoService>();
+builder.Services.AddScoped<UpdateStatsService>();
 
 // >>>> items
 builder.Services.AddScoped<AddItemService>();
