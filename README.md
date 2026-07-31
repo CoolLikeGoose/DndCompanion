@@ -12,7 +12,7 @@ Web companion tool for tabletop DnD sessions. Designed to make it easier for bot
 
 ## Getting started
 ### Development
-> git clone https://github.com/josh-k-johnson/DnDCompanion.git \
+> git clone https://github.com/CoolLikeGoose/DndCompanion.git \
 > dotnet build \
 > dotnet run --project .\DndCompanion.Web\DndCompanion.Web.csproj
 
