@@ -13,6 +13,11 @@
         }
         else
         {
+            <a href="/sessions/@SessionId/info?participantId=@ParticipantId"
+               class="btn rounded-pill @(IsActive("info") ? "btn-primary" : "btn-outline-secondary")"
+               title="Info">
+                <i class="bi bi-info-circle"></i>
+            </a>
             <a href="/sessions/@SessionId/character?participantId=@ParticipantId" 
                class="btn rounded-pill @(IsActive("character") ? "btn-primary" : "btn-outline-secondary")"
                title="Character">
