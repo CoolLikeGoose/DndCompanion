@@ -31,5 +31,15 @@ public sealed class CharacterConfiguration : IEntityTypeConfiguration<Character>
             .WithOne()
             .HasForeignKey(x => x.CharacterId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasOne(x => x.Info)
+            .WithOne()
+            .HasForeignKey<CharacterInfo>(x => x.CharacterId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasOne(x => x.Stats)
+            .WithOne()
+            .HasForeignKey<CharacterStats>(x => x.CharacterId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

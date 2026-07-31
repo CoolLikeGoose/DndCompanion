@@ -6,61 +6,73 @@ public class Character
 {
     private Character()
     {
-        
     }
-    
+
     public Guid Id { get; private set; }
     public string Name { get; private set; } = null!;
     public Guid? UserId { get; private set; }
     public DateTime CreatedAt { get; private set; }
-    
+
     private readonly List<Resource> _resources = new();
     public IReadOnlyCollection<Resource> Resources => _resources.AsReadOnly();
-    
+
     private readonly List<Item> _items = new();
     public IReadOnlyCollection<Item> Items => _items.AsReadOnly();
-    
+
+    private CharacterInfo _info = null!;
+    public CharacterInfo Info => _info;
+
+    private CharacterStats _stats = null!;
+    public CharacterStats Stats => _stats;
+
+
     public static Character Create(string name, Guid? userId)
     {
-        if (string.IsNullOrWhiteSpace(name)) 
+        if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Name is required", nameof(name));
 
         var normalizedName = name.Trim();
-        if (normalizedName.Length > 100) 
+        if (normalizedName.Length > 100)
             throw new ArgumentException("Name is too long(max 100 chars)", nameof(name));
 
-        return new Character
+        var character = new Character
         {
             Id = Guid.NewGuid(),
             Name = normalizedName,
             UserId = userId,
             CreatedAt = DateTime.UtcNow
         };
+
+        character._info = CharacterInfo.Create(character.Id);
+        character._stats = CharacterStats.Create(character.Id);
+
+        return character;
     }
-    
+
     // Resources
     public void AddResource(
-        ResourceType type, 
-        int maximum, 
+        ResourceType type,
+        int maximum,
         RecoveryType recovery,
         string name,
         string? group = null,
         int? initialCurrent = null)
     {
         if (_resources.Any(x => x.MatchesType(type, name)))
-            throw new InvalidOperationException($"Resource of type {type} with name {name ?? "NONE"} already exists for this character.");
-        
+            throw new InvalidOperationException(
+                $"Resource of type {type} with name {name ?? "NONE"} already exists for this character.");
+
         var resource = Resource.Create(Id, name, type, maximum, recovery, group, initialCurrent);
-        _resources.Add(resource);   
+        _resources.Add(resource);
     }
-    
+
     public Resource ChangeResource(ResourceType type, string name, int delta)
     {
         var resource = GetResource(type, name);
         resource.Change(delta);
         return resource;
     }
-    
+
     public Resource SetResource(ResourceType type, string name, int value)
     {
         var resource = GetResource(type, name);
@@ -91,20 +103,21 @@ public class Character
     {
         var resource = _resources.FirstOrDefault(x => x.MatchesType(type, name));
         if (resource is null)
-            throw new ArgumentException($"Resource of type {type} with name {name ?? "NONE"} not found for this character.", nameof(type));
-        
+            throw new ArgumentException(
+                $"Resource of type {type} with name {name ?? "NONE"} not found for this character.", nameof(type));
+
         return resource;
     }
-    
+
     // Items   
     public Item AddItem(
-        string name, 
+        string name,
         string? description,
         string? sourceUrl,
         int quantity = 1)
     {
         var item = Item.Create(Id, name, description, sourceUrl, quantity);
-        _items.Add(item);  
+        _items.Add(item);
         return item;
     }
 
@@ -113,16 +126,47 @@ public class Character
         var item = _items.FirstOrDefault(x => x.Id == itemId);
         if (item is null)
             throw new ArgumentException($"Item with id {itemId} not found for this character.", nameof(itemId));
-        
+
         _items.Remove(item);
     }
-    
+
     public void UpdateItem(Guid itemId, string? name, string? description, string? sourceUrl, int? quantity)
     {
         var item = _items.FirstOrDefault(x => x.Id == itemId);
         if (item is null)
             throw new ArgumentException($"Item with id {itemId} not found for this character.", nameof(itemId));
-        
+
         item.Update(name, description, sourceUrl, quantity);
+    }
+
+    // Stats
+    public void UpdateStats(
+        int? strength = null,
+        int? dexterity = null,
+        int? constitution = null,
+        int? intelligence = null,
+        int? wisdom = null,
+        int? charisma = null)
+    {
+        _stats.Update(strength, dexterity, constitution, intelligence, wisdom, charisma);
+    }
+
+    public void UpdateInfo(
+        string? characterClass = null,
+        int? level = null,
+        string? race = null,
+        int? age = null,
+        string? background = null,
+        string? alignment = null,
+        int? experiencePoints = null,
+        string? personalityTraits = null,
+        string? ideals = null,
+        string? bonds = null,
+        string? flaws = null,
+        string? languageProficiencies = null,
+        string? toolProficiencies = null)
+    {
+        _info.Update(characterClass, level, race, age, background, alignment, experiencePoints, personalityTraits,
+            ideals, bonds, flaws, languageProficiencies, toolProficiencies);
     }
 }

@@ -55,6 +55,59 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CharacterInfos",
+                columns: table => new
+                {
+                    CharacterId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Class = table.Column<string>(type: "TEXT", nullable: true),
+                    Level = table.Column<int>(type: "INTEGER", nullable: true),
+                    Race = table.Column<string>(type: "TEXT", nullable: true),
+                    Age = table.Column<int>(type: "INTEGER", nullable: true),
+                    Background = table.Column<string>(type: "TEXT", nullable: true),
+                    Alignment = table.Column<string>(type: "TEXT", nullable: true),
+                    ExperiencePoints = table.Column<int>(type: "INTEGER", nullable: true),
+                    PersonalityTraits = table.Column<string>(type: "TEXT", nullable: true),
+                    Ideals = table.Column<string>(type: "TEXT", nullable: true),
+                    Bonds = table.Column<string>(type: "TEXT", nullable: true),
+                    Flaws = table.Column<string>(type: "TEXT", nullable: true),
+                    LanguageProficiencies = table.Column<string>(type: "TEXT", nullable: true),
+                    ToolProficiencies = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CharacterInfos", x => x.CharacterId);
+                    table.ForeignKey(
+                        name: "FK_CharacterInfos_Characters_CharacterId",
+                        column: x => x.CharacterId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CharacterStats",
+                columns: table => new
+                {
+                    CharacterId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Strength = table.Column<int>(type: "INTEGER", nullable: false),
+                    Dexterity = table.Column<int>(type: "INTEGER", nullable: false),
+                    Constitution = table.Column<int>(type: "INTEGER", nullable: false),
+                    Intelligence = table.Column<int>(type: "INTEGER", nullable: false),
+                    Wisdom = table.Column<int>(type: "INTEGER", nullable: false),
+                    Charisma = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CharacterStats", x => x.CharacterId);
+                    table.ForeignKey(
+                        name: "FK_CharacterStats_Characters_CharacterId",
+                        column: x => x.CharacterId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Items",
                 columns: table => new
                 {
@@ -171,6 +224,12 @@ namespace Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "CharacterInfos");
+
+            migrationBuilder.DropTable(
+                name: "CharacterStats");
+
             migrationBuilder.DropTable(
                 name: "Items");
 

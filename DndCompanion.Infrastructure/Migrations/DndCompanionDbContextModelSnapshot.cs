@@ -40,6 +40,83 @@ namespace Infrastructure.Migrations
                     b.ToTable("Characters", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.CharacterInfo", b =>
+                {
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Age")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Alignment")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Background")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Bonds")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Class")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ExperiencePoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Flaws")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Ideals")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LanguageProficiencies")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Level")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PersonalityTraits")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Race")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ToolProficiencies")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("CharacterId");
+
+                    b.ToTable("CharacterInfos", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.CharacterStats", b =>
+                {
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Charisma")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Constitution")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Dexterity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Intelligence")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Strength")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Wisdom")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("CharacterId");
+
+                    b.ToTable("CharacterStats", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.Item", b =>
                 {
                     b.Property<Guid>("Id")
@@ -198,6 +275,24 @@ namespace Infrastructure.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.CharacterInfo", b =>
+                {
+                    b.HasOne("Domain.Entities.Character", null)
+                        .WithOne("Info")
+                        .HasForeignKey("Domain.Entities.CharacterInfo", "CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Entities.CharacterStats", b =>
+                {
+                    b.HasOne("Domain.Entities.Character", null)
+                        .WithOne("Stats")
+                        .HasForeignKey("Domain.Entities.CharacterStats", "CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Domain.Entities.Item", b =>
                 {
                     b.HasOne("Domain.Entities.Character", null)
@@ -234,9 +329,15 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Character", b =>
                 {
+                    b.Navigation("Info")
+                        .IsRequired();
+
                     b.Navigation("Items");
 
                     b.Navigation("Resources");
+
+                    b.Navigation("Stats")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Entities.Session", b =>
