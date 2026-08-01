@@ -43,6 +43,15 @@ public sealed class CharacterRepository : ICharacterRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public Task<Character?> FindByIdWithInfoAndStatsAsync(Guid characterId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Characters
+            .Where(x => x.Id == characterId)
+            .Include(x => x.Info)
+            .Include(x => x.Stats)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public Task<Character?> FindByIdWithItemsAndResourcesAsync(Guid characterId, CancellationToken cancellationToken = default)
     {
         return _dbContext.Characters

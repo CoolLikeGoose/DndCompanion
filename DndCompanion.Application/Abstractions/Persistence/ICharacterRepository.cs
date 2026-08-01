@@ -8,6 +8,7 @@ public interface ICharacterRepository
     Task<List<Character>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<Character?> FindByIdWithResourcesAsync(Guid characterId, CancellationToken cancellationToken = default);
     Task<Character?> FindByIdWithItemsAsync(Guid characterId, CancellationToken cancellationToken = default);
+    Task<Character?> FindByIdWithInfoAndStatsAsync(Guid characterId, CancellationToken cancellationToken = default);
     Task<Character?> FindByIdWithItemsAndResourcesAsync(Guid characterId, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

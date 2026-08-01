@@ -53,6 +53,16 @@ public sealed class SessionRepository : ISessionRepository
             .FirstOrDefaultAsync(x => x.Id == participantId, cancellationToken);
     }
 
+    public Task<SessionParticipant?> FindParticipantByIdWithInfoAndStatsAsync(Guid participantId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.SessionParticipants
+            .Include(x => x.Character)
+            .ThenInclude(x => x!.Info)
+            .Include(x => x.Character)
+            .ThenInclude(x => x!.Stats)
+            .FirstOrDefaultAsync(x => x.Id == participantId, cancellationToken);
+    }
+
     public async Task<SessionParticipant?> FindParticipantByIdAsync(Guid participantId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.SessionParticipants
