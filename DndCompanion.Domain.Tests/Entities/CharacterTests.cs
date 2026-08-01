@@ -189,4 +189,58 @@ public class CharacterTests
             Assert.Throws<ArgumentException>(() => character.RemoveItem(Guid.NewGuid()));
         }
     }
+    
+    public class UpdateStats
+    {
+        [Fact]
+        public void UpdatesStats_WhenValid()
+        {
+            var character = CreateCharacter();
+            character.UpdateStats(strength: 16);
+            Assert.Equal(16, character.Stats.Strength);
+            Assert.Equal(10, character.Stats.Dexterity);
+        }
+
+        [Fact]
+        public void UpdatesAllStats_WhenValid()
+        {
+            var character = CreateCharacter();
+            character.UpdateStats(strength: 16, dexterity: 14, constitution: 12, intelligence: 10, wisdom: 8, charisma: 6);
+            Assert.Equal(16, character.Stats.Strength);
+            Assert.Equal(14, character.Stats.Dexterity);
+            Assert.Equal(12, character.Stats.Constitution);
+            Assert.Equal(10, character.Stats.Intelligence);
+            Assert.Equal(8, character.Stats.Wisdom);
+            Assert.Equal(6, character.Stats.Charisma);
+        }
+    }
+    
+    public class UpdateInfo
+    {
+        [Fact]
+        public void UpdatesProvidedOnly_WhenValid()
+        {
+            var character = CreateCharacter();
+            character.UpdateInfo(characterClass: "Wizard", level: 5);
+            Assert.Equal("Wizard", character.Info.Class);
+            Assert.Equal(5, character.Info.Level);
+            Assert.Null(character.Info.Race);
+        }
+        
+        [Fact]
+        public void NormalizesToNull_WhenWhitespace()
+        {
+            var character = CreateCharacter();
+            character.UpdateInfo(characterClass: "   ");
+            Assert.Null(character.Info.Class);
+        }
+        
+        [Fact]
+        public void NormalizesToNull_WhenEmpty()
+        {
+            var character = CreateCharacter();
+            character.UpdateInfo(characterClass: "");
+            Assert.Null(character.Info.Class);
+        }
+    }
 }
