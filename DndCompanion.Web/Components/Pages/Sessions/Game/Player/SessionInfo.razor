@@ -22,6 +22,11 @@
                 </button>
             </div>
         </div>
+        
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="alert alert-danger" role="alert">@_error</div>
+        }
 
         @* Stats *@
         <div class="card mb-3">
@@ -36,7 +41,7 @@
                             {
                                 <input type="number" class="form-control form-control-sm text-center"
                                        value="@stat.Value"
-                                       @onchange="e => SetStat(stat.Label, int.Parse(e.Value!.ToString()!))"/>
+                                       @onchange="e => { if (int.TryParse(e.Value?.ToString(), out var value)) SetStat(stat.Label, value);}"/>
                             }
                             else
                             {
@@ -48,7 +53,8 @@
                 </div>
                 @if (_editMode)
                 {
-                    <button class="btn btn-primary w-100 mt-3" @onclick="SaveStats" disabled="@_isBusy">Save stats</button>
+                    <button class="btn btn-primary w-100 mt-3" @onclick="SaveStats" disabled="@_isBusy">Save stats
+                    </button>
                 }
             </div>
         </div>
@@ -113,34 +119,60 @@
                             <input class="form-control" @bind="_formToolProficiencies"/>
                         </div>
                     </div>
-                    <button class="btn btn-primary w-100 mt-3" @onclick="SaveInfo" disabled="@_isBusy">Save info</button>
+                    <button class="btn btn-primary w-100 mt-3" @onclick="SaveInfo" disabled="@_isBusy">Save info
+                    </button>
                 }
                 else
                 {
                     <div class="row g-2">
-                        <div class="col-6"><span class="text-muted small">Class</span><div>@(_participant.Character.Info?.Class ?? "—")</div></div>
-                        <div class="col-3"><span class="text-muted small">Level</span><div>@(_participant.Character.Info?.Level?.ToString() ?? "—")</div></div>
-                        <div class="col-3"><span class="text-muted small">Age</span><div>@(_participant.Character.Info?.Age?.ToString() ?? "—")</div></div>
-                        <div class="col-6"><span class="text-muted small">Race</span><div>@(_participant.Character.Info?.Race ?? "—")</div></div>
-                        <div class="col-6"><span class="text-muted small">Alignment</span><div>@(_participant.Character.Info?.Alignment ?? "—")</div></div>
-                        <div class="col-6"><span class="text-muted small">Background</span><div>@(_participant.Character.Info?.Background ?? "—")</div></div>
-                        <div class="col-6"><span class="text-muted small">XP</span><div>@(_participant.Character.Info?.ExperiencePoints?.ToString() ?? "—")</div></div>
+                        <div class="col-6"><span class="text-muted small">Class</span>
+                            <div>@(_participant.Character.Info?.Class ?? "—")</div>
+                        </div>
+                        <div class="col-3"><span class="text-muted small">Level</span>
+                            <div>@(_participant.Character.Info?.Level?.ToString() ?? "—")</div>
+                        </div>
+                        <div class="col-3"><span class="text-muted small">Age</span>
+                            <div>@(_participant.Character.Info?.Age?.ToString() ?? "—")</div>
+                        </div>
+                        <div class="col-6"><span class="text-muted small">Race</span>
+                            <div>@(_participant.Character.Info?.Race ?? "—")</div>
+                        </div>
+                        <div class="col-6"><span class="text-muted small">Alignment</span>
+                            <div>@(_participant.Character.Info?.Alignment ?? "—")</div>
+                        </div>
+                        <div class="col-6"><span class="text-muted small">Background</span>
+                            <div>@(_participant.Character.Info?.Background ?? "—")</div>
+                        </div>
+                        <div class="col-6"><span class="text-muted small">XP</span>
+                            <div>@(_participant.Character.Info?.ExperiencePoints?.ToString() ?? "—")</div>
+                        </div>
                     </div>
                     @if (!string.IsNullOrWhiteSpace(_participant.Character.Info?.PersonalityTraits))
                     {
-                        <div class="mt-2"><span class="text-muted small">Personality Traits</span><div>@_participant.Character.Info.PersonalityTraits</div></div>
+                        <div class="mt-2"><span class="text-muted small">Personality Traits</span>
+                            <div>@_participant.Character.Info.PersonalityTraits</div>
+                        </div>
                     }
+
                     @if (!string.IsNullOrWhiteSpace(_participant.Character.Info?.Ideals))
                     {
-                        <div class="mt-2"><span class="text-muted small">Ideals</span><div>@_participant.Character.Info.Ideals</div></div>
+                        <div class="mt-2"><span class="text-muted small">Ideals</span>
+                            <div>@_participant.Character.Info.Ideals</div>
+                        </div>
                     }
+
                     @if (!string.IsNullOrWhiteSpace(_participant.Character.Info?.Bonds))
                     {
-                        <div class="mt-2"><span class="text-muted small">Bonds</span><div>@_participant.Character.Info.Bonds</div></div>
+                        <div class="mt-2"><span class="text-muted small">Bonds</span>
+                            <div>@_participant.Character.Info.Bonds</div>
+                        </div>
                     }
+
                     @if (!string.IsNullOrWhiteSpace(_participant.Character.Info?.Flaws))
                     {
-                        <div class="mt-2"><span class="text-muted small">Flaws</span><div>@_participant.Character.Info.Flaws</div></div>
+                        <div class="mt-2"><span class="text-muted small">Flaws</span>
+                            <div>@_participant.Character.Info.Flaws</div>
+                        </div>
                     }
                 }
             </div>
@@ -152,7 +184,9 @@
 
 @code {
     [Parameter] public Guid SessionId { get; set; }
-    [SupplyParameterFromQuery(Name = "participantId")] public Guid ParticipantId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "participantId")]
+    public Guid ParticipantId { get; set; }
 
     private SessionParticipant? _participant;
     private bool _editMode;
@@ -186,9 +220,19 @@
 
     private async Task ReloadAsync()
     {
+        _error = null;
         _participant = await SessionRepository.FindParticipantByIdWithInfoAndStatsAsync(ParticipantId);
-        if (_participant?.Character is not null)
+        if (_participant is null || _participant.SessionId != SessionId)
+        {
+            _participant = null;
+            _error = "Failed to load participant for this session.";
+            return;
+        }
+
+        if (_participant.Character is not null)
+        {
             InitForms();
+        }
     }
 
     private void InitForms()
@@ -238,7 +282,7 @@
 
     private string GetModifier(int value)
     {
-        var mod = (value - 10) / 2;
+        var mod = (int)Math.Floor((value - 10) / 2.0);
         return mod >= 0 ? $"+{mod}" : $"{mod}";
     }
 
@@ -248,7 +292,12 @@
         var result = await UpdateStatsService.ExecuteAsync(new UpdateStatsCommand(
             ParticipantId, _formStr, _formDex, _formCon, _formInt, _formWis, _formCha));
         _isBusy = false;
-        if (!result.IsSuccess) { _error = result.ErrorMessage; return; }
+        if (!result.IsSuccess)
+        {
+            _error = result.ErrorMessage;
+            return;
+        }
+
         await ReloadAsync();
     }
 
@@ -260,7 +309,13 @@
             _formAlignment, _formExperiencePoints, _formPersonalityTraits, _formIdeals,
             _formBonds, _formFlaws, _formLanguageProficiencies, _formToolProficiencies));
         _isBusy = false;
-        if (!result.IsSuccess) { _error = result.ErrorMessage; return; }
+        if (!result.IsSuccess)
+        {
+            _error = result.ErrorMessage;
+            return;
+        }
+
         await ReloadAsync();
     }
+
 }

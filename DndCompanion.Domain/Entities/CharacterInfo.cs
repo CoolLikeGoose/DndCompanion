@@ -48,18 +48,20 @@ public class CharacterInfo
         string? languageProficiencies = null,
         string? toolProficiencies = null)
     {
-        if (characterClass != null) Class = characterClass.Trim();
+        static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        
+        if (characterClass != null) Class = Normalize(characterClass);
         if (level.HasValue) Level = level.Value;
-        if (race != null) Race = race.Trim();
+        if (race != null) Race = Normalize(race);
         if (age.HasValue) Age = age.Value;
-        if (background != null) Background = background.Trim();
-        if (alignment != null) Alignment = alignment.Trim();
+        if (background != null) Background = Normalize(background);
+        if (alignment != null) Alignment = Normalize(alignment);
         if (experiencePoints.HasValue) ExperiencePoints = experiencePoints.Value;
-        if (personalityTraits != null) PersonalityTraits = personalityTraits.Trim();
-        if (ideals != null) Ideals = ideals.Trim();
-        if (bonds != null) Bonds = bonds.Trim();
-        if (flaws != null) Flaws = flaws.Trim();
-        if (languageProficiencies != null) LanguageProficiencies = languageProficiencies.Trim();
-        if (toolProficiencies != null) ToolProficiencies = toolProficiencies.Trim();
+        if (personalityTraits != null) PersonalityTraits = Normalize(personalityTraits);
+        if (ideals != null) Ideals = Normalize(ideals);
+        if (bonds != null) Bonds = Normalize(bonds);
+        if (flaws != null) Flaws = Normalize(flaws);
+        if (languageProficiencies != null) LanguageProficiencies = Normalize(languageProficiencies);
+        if (toolProficiencies != null) ToolProficiencies = Normalize(toolProficiencies);
     }
 }
