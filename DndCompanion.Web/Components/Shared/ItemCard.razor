@@ -15,25 +15,31 @@
             <button class="btn btn-sm btn-outline-warning" @onclick:stopPropagation="true" @onclick="() => OnEdit.InvokeAsync(Item)">Edit</button>
             <button class="btn btn-sm btn-outline-danger" @onclick:stopPropagation="true" @onclick="() => OnRemove.InvokeAsync(Item.Id)">Remove</button>
         }
-        <i class="bi @(_expanded ? "bi-chevron-up" : "bi-chevron-down") text-muted"></i>
+        @if (CanExpand())
+        {
+            <i class="bi @(_expanded ? "bi-chevron-up" : "bi-chevron-down") text-muted"></i>
+        }
     </div>
     
-    @if (_expanded && !string.IsNullOrWhiteSpace(Item.Description))
+    @if (_expanded)
     {
-        <div class="px-3 pb-2 text-muted small border-top pt-2">@Item.Description</div>
-    }
-    @if (_expanded && !string.IsNullOrWhiteSpace(Item.SourceUrl))
-    {
-        <div class="px-3 pb-2">
-            @if (Item.SourceUrl?.StartsWith("https://") == true)
-            {
-                <a href="@Item.SourceUrl" target="_blank" class="small text-decoration-underline" rel="noopener noreferrer">Source</a>
-            }
-            else
-            {
-                <p class="text-muted">Invalid Source Link</p>
-            }
-        </div>
+        @if (!string.IsNullOrWhiteSpace(Item.Description))
+        {
+            <div class="px-3 pb-2 text-muted small border-top pt-2">@Item.Description</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Item.SourceUrl))
+        {
+            <div class="px-3 pb-2">
+                @if (Item.SourceUrl?.StartsWith("https://") == true)
+                {
+                    <a href="@Item.SourceUrl" target="_blank" class="small text-decoration-underline" rel="noopener noreferrer">Source</a>
+                }
+                else
+                {
+                    <p class="text-muted">Invalid Source Link</p>
+                }
+            </div>
+        }
     }
 </div>
 
@@ -46,4 +52,5 @@
     private bool _expanded;
     
     private void ToggleExpanded() => _expanded = !_expanded;
+    private bool CanExpand() => !string.IsNullOrWhiteSpace(Item.Description) || !string.IsNullOrWhiteSpace(Item.SourceUrl);
 }
