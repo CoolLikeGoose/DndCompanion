@@ -47,6 +47,12 @@ public sealed class JoinSessionService
 
         try
         {
+            if (command.ExistingParticipantId.HasValue)
+            {
+                var existing = await _sessionRepository.FindParticipantByIdAsync(command.ExistingParticipantId.Value, cancellationToken);
+                if (existing is not null && existing.SessionId == session.Id)
+                    return new JoinSessionResult(true, null, session.Id, existing.Id);
+            }
             
             if (_currentUser.UserId is { } userId)
             {

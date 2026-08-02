@@ -4,10 +4,12 @@
 @using DndCompanion.Application.Features.Characters.CreateCharacter
 @using DndCompanion.Application.Features.Characters.SelectCharacter
 @using Domain.Entities
-@inject CreateCharacterService CreateCharacterService
-@inject SelectCharacterService SelectCharacterService
+
 @inject ICharacterRepository CharacterRepository
 @inject ISessionRepository SessionRepository
+
+@inject CreateCharacterService CreateCharacterService
+@inject SelectCharacterService SelectCharacterService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Nav
 
@@ -17,12 +19,12 @@
     <div class="col-12 col-lg-9">
         <h1 class="mb-1">Choose your character</h1>
         <p class="text-muted mb-4">Session: @SessionId</p>
-        
+
         @if (!string.IsNullOrWhiteSpace(_error))
         {
             <div class="alert alert-danger" role="alert">@_error</div>
         }
-        
+
         @* exitsting characters *@
         @if (_userCharacters.Count > 0)
         {
@@ -47,7 +49,7 @@
                 }
             </div>
         }
-        
+
         @* create new character *@
         <h5 class="mb-3">New character</h5>
         <div class="row g-3">
@@ -55,14 +57,15 @@
                 <div class="card h-100">
                     <div class="card-body d-flex flex-column gap-2">
                         <h5 class="card-title">Create new character</h5>
-                        <input class="form-control" placeholder="Character name" @bind="_newCharacterName" disabled="@_isLoading"/>
+                        <input class="form-control" placeholder="Character name" @bind="_newCharacterName"
+                               disabled="@_isLoading"/>
                         <button class="btn btn-primary mt-auto" @onclick="CreateCharacter" disabled="@_isLoading">
                             @(_isLoading ? "Creating..." : "Create")
                         </button>
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-12 col-sm-6 col-lg-4">
                 <div class="card h-100">
                     <div class="card-body d-flex flex-column">
@@ -80,7 +83,9 @@
     private const string ParticipantQueryKey = "participantId";
 
     [Parameter] public Guid SessionId { get; set; }
-    [SupplyParameterFromQuery(Name = ParticipantQueryKey)] public Guid ParticipantId { get; set; }
+
+    [SupplyParameterFromQuery(Name = ParticipantQueryKey)]
+    public Guid ParticipantId { get; set; }
 
     private List<Character> _userCharacters = new();
     private string _newCharacterName = "";
@@ -105,6 +110,10 @@
             if (Guid.TryParse(raw, out var id))
                 _userCharacters = await CharacterRepository.GetByUserIdAsync(id);
         }
+        else if (participant.CharacterId is not null)
+        {
+            Nav.NavigateTo($"/sessions/{SessionId}/character?participantId={ParticipantId}");
+        }
     }
 
     private async Task CreateCharacter()
@@ -114,13 +123,13 @@
             _error = "Character name is required";
             return;
         }
-        
+
         _isLoading = true;
         _error = null;
 
         var result = await CreateCharacterService.ExecuteAsync(
             new CreateCharacterCommand(_newCharacterName, SessionId, ParticipantId));
-        
+
         _isLoading = false;
 
         if (!result.IsSuccess)
@@ -128,7 +137,7 @@
             _error = result.ErrorMessage;
             return;
         }
-        
+
         Nav.NavigateTo($"sessions/{SessionId}?{ParticipantQueryKey}={ParticipantId}");
     }
 
@@ -139,7 +148,7 @@
 
         var result = await SelectCharacterService.ExecuteAsync(
             new SelectCharacterCommand(characterId, SessionId, ParticipantId));
-        
+
         _isLoading = false;
 
         if (!result.IsSuccess)
@@ -147,7 +156,8 @@
             _error = result.ErrorMessage;
             return;
         }
-        
+
         Nav.NavigateTo($"sessions/{SessionId}?{ParticipantQueryKey}={ParticipantId}");
     }
+
 }
