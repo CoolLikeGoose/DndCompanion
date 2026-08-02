@@ -199,8 +199,23 @@ app.MapPost("/sessions/join", async (
     return Results.Redirect($"/sessions/{sessionId}/lobby?participantId={participantId}");
 }).DisableAntiforgery();
 
-app.MapGet("/sessions/resume", (HttpContext httpContext) =>
+app.MapGet("/sessions/resume", async (
+    HttpContext httpContext, 
+    ISessionRepository sessionRepository) =>
 {
+    var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+    if (userIdClaim is not null && Guid.TryParse(userIdClaim.Value, out var userId))
+    {
+        var participant = await sessionRepository.FindActiveParticipantByUserIdAsync(userId);
+
+        if (participant is not null)
+        {
+            SaveLastSessionCookies(httpContext, participant.SessionId, participant.Id);
+            return Results.Redirect($"/sessions/{participant.SessionId}?participantId={participant.Id}");
+        }
+    }
+    
+    // Fallback for registered users, main for unregistered
     var sessionIdRaw = httpContext.Request.Cookies[LastSessionIdCookie];
     var participantIdRaw = httpContext.Request.Cookies[LastParticipantIdCookie];
 

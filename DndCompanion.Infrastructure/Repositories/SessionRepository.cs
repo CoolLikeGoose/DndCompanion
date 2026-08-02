@@ -71,6 +71,15 @@ public sealed class SessionRepository : ISessionRepository
             .FirstOrDefaultAsync(x => x.Id == participantId, cancellationToken);
     }
 
+    // last session determined by joinedAt
+    public Task<SessionParticipant?> FindActiveParticipantByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.SessionParticipants
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.JoinedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task AddParticipantAsync(SessionParticipant participant, CancellationToken cancellationToken = default)
     {
         await _dbContext.SessionParticipants.AddAsync(participant, cancellationToken);
