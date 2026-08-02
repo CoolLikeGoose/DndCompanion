@@ -47,11 +47,18 @@ public sealed class JoinSessionService
 
         try
         {
-            var participant = session.Join(displayName, _currentUser.UserId, pinCode);
+            
+            if (_currentUser.UserId is { } userId)
+            {
+                var existing = session.Participants.FirstOrDefault(p => p.UserId == userId);
+                if (existing is not null)
+                    return new JoinSessionResult(true, null, session.Id, existing.Id);
+            }
 
             if (_currentUser.UserId is { } currentUserId)
                 await _sessionRepository.RemoveParticipantsByUserIdAsync(currentUserId, session.Id, cancellationToken);
             
+            var participant = session.Join(displayName, _currentUser.UserId, pinCode);
             await _sessionRepository.AddParticipantAsync(participant, cancellationToken);
             await _sessionRepository.SaveChangesAsync(cancellationToken);
             
