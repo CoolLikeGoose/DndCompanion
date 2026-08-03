@@ -3,4 +3,5 @@
 public sealed record JoinSessionCommand(
     string InviteCode,
     string? DisplayName,
-    string? PinCode);
+    string? PinCode,
+    Guid? ExistingParticipantId = null);

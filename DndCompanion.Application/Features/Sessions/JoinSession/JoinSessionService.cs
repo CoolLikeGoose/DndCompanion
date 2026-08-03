@@ -31,27 +31,46 @@ public sealed class JoinSessionService
         var session = await _sessionRepository.FindByInviteCodeAsync(command.InviteCode, cancellationToken);
         if (session is null)
             return new JoinSessionResult(false, "Session not found");
-        
-        PinCode? pinCode = null;
-        if (!string.IsNullOrWhiteSpace(command.PinCode))
-        {
-            try
-            {
-                pinCode = PinCode.From(command.PinCode);
-            }
-            catch (ArgumentException e)
-            {
-                return new JoinSessionResult(false, e.Message);
-            }
-        }
 
         try
         {
-            var participant = session.Join(displayName, _currentUser.UserId, pinCode);
+            PinCode? pinCode = null;
+            if (session.PinCode is not null)
+            {
+                if (string.IsNullOrWhiteSpace(command.PinCode))
+                    return new JoinSessionResult(false, "Pin code is required to join this session");
+                
+                try
+                {
+                    pinCode = PinCode.From(command.PinCode);
+                }
+                catch (ArgumentException e)
+                {
+                    return new JoinSessionResult(false, e.Message);
+                }
+                
+                if (!pinCode.Equals(session.PinCode))   
+                    return new JoinSessionResult(false, "Invalid pin code");
+            }
+            
+            if (command.ExistingParticipantId.HasValue)
+            {
+                var existing = await _sessionRepository.FindParticipantByIdAsync(command.ExistingParticipantId.Value, cancellationToken);
+                if (existing is not null && existing.SessionId == session.Id)
+                    return new JoinSessionResult(true, null, session.Id, existing.Id);
+            }
+            
+            if (_currentUser.UserId is { } userId)
+            {
+                var existing = session.Participants.FirstOrDefault(p => p.UserId == userId);
+                if (existing is not null)
+                    return new JoinSessionResult(true, null, session.Id, existing.Id);
+            }
 
             if (_currentUser.UserId is { } currentUserId)
                 await _sessionRepository.RemoveParticipantsByUserIdAsync(currentUserId, session.Id, cancellationToken);
             
+            var participant = session.Join(displayName, _currentUser.UserId, pinCode);
             await _sessionRepository.AddParticipantAsync(participant, cancellationToken);
             await _sessionRepository.SaveChangesAsync(cancellationToken);
             

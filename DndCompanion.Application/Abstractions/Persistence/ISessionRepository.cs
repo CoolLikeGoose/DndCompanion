@@ -11,6 +11,7 @@ public interface ISessionRepository
     Task<SessionParticipant?> FindParticipantByIdWithItemsAsync(Guid participantId, CancellationToken cancellationToken = default);
     Task<SessionParticipant?> FindParticipantByIdWithInfoAndStatsAsync(Guid participantId, CancellationToken cancellationToken = default);
     Task<SessionParticipant?> FindParticipantByIdAsync(Guid participantId, CancellationToken cancellationToken = default);
+    Task<SessionParticipant?> FindMostRecentParticipantByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
     Task AddParticipantAsync(SessionParticipant participant, CancellationToken cancellationToken = default);
     Task RemoveParticipantsByUserIdAsync(Guid userId, Guid? exceptSessionId = null, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);

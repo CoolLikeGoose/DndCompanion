@@ -127,16 +127,15 @@ app.MapPost("/auth/login", async (
         new(ClaimTypes.Name, result.UserName!),
         new(ClaimTypes.Email, result.Email!)
     };
-    
+
     var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
     var principal = new ClaimsPrincipal(identity);
 
     await httpContext.SignInAsync(
         CookieAuthenticationDefaults.AuthenticationScheme,
         principal);
-    
-    return Results.Redirect("/");
 
+    return Results.Redirect("/");
 }).DisableAntiforgery();
 
 app.MapPost("/auth/logout", async (HttpContext httpContext) =>
@@ -144,7 +143,6 @@ app.MapPost("/auth/logout", async (HttpContext httpContext) =>
     await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     ClearLastSessionCookies(httpContext);
     return Results.Redirect("/");
-    
 }).DisableAntiforgery();
 
 app.MapPost("/sessions/create", async (
@@ -180,14 +178,18 @@ app.MapPost("/sessions/join", async (
     [FromForm] string? pinCode,
     JoinSessionService joinSessionService) =>
 {
-    var result = await joinSessionService.ExecuteAsync(new JoinSessionCommand(inviteCode, displayName, pinCode));
-    
+    var participantIdRaw = httpContext.Request.Cookies[LastParticipantIdCookie];
+    Guid.TryParse(participantIdRaw, out var existingParticipantId);
+
+    var result = await joinSessionService.ExecuteAsync(new JoinSessionCommand(inviteCode, displayName, pinCode,
+        existingParticipantId == Guid.Empty ? null : existingParticipantId));
+
     if (!result.IsSuccess)
     {
         var error = Uri.EscapeDataString(result.ErrorMessage ?? "Session join failed");
         return Results.Redirect($"/sessions/join?error={error}&inviteCode={Uri.EscapeDataString(inviteCode)}");
     }
-    
+
     var sessionIdValue = result.SessionId!.Value;
     var participantIdValue = result.ParticipantId!.Value;
 
@@ -195,12 +197,27 @@ app.MapPost("/sessions/join", async (
 
     var sessionId = Uri.EscapeDataString(sessionIdValue.ToString());
     var participantId = Uri.EscapeDataString(participantIdValue.ToString());
-    
+
     return Results.Redirect($"/sessions/{sessionId}/lobby?participantId={participantId}");
 }).DisableAntiforgery();
 
-app.MapGet("/sessions/resume", (HttpContext httpContext) =>
+app.MapGet("/sessions/resume", async (
+    HttpContext httpContext,
+    ISessionRepository sessionRepository) =>
 {
+    var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+    if (userIdClaim is not null && Guid.TryParse(userIdClaim.Value, out var userId))
+    {
+        var participant = await sessionRepository.FindMostRecentParticipantByUserIdAsync(userId);
+
+        if (participant is not null)
+        {
+            SaveLastSessionCookies(httpContext, participant.SessionId, participant.Id);
+            return Results.Redirect($"/sessions/{participant.SessionId}?participantId={participant.Id}");
+        }
+    }
+
+    // Fallback for registered users, main for unregistered
     var sessionIdRaw = httpContext.Request.Cookies[LastSessionIdCookie];
     var participantIdRaw = httpContext.Request.Cookies[LastParticipantIdCookie];
 
@@ -236,7 +253,7 @@ void ClearLastSessionCookies(HttpContext httpContext)
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<DndCompanionDbContext>();
-    dbContext.Database.Migrate();   
+    dbContext.Database.Migrate();
 }
 
 app.Run();
