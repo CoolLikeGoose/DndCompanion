@@ -208,7 +208,7 @@ app.MapGet("/sessions/resume", async (
     var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier);
     if (userIdClaim is not null && Guid.TryParse(userIdClaim.Value, out var userId))
     {
-        var participant = await sessionRepository.FindActiveParticipantByUserIdAsync(userId);
+        var participant = await sessionRepository.FindMostRecentParticipantByUserIdAsync(userId);
 
         if (participant is not null)
         {

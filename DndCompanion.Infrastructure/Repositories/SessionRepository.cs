@@ -72,7 +72,7 @@ public sealed class SessionRepository : ISessionRepository
     }
 
     // last session determined by joinedAt
-    public Task<SessionParticipant?> FindActiveParticipantByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    public Task<SessionParticipant?> FindMostRecentParticipantByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return _dbContext.SessionParticipants
             .Where(x => x.UserId == userId)

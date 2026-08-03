@@ -6,7 +6,7 @@ public class PinCode
     
     private PinCode(string value) => Value = value;
 
-    public static PinCode From(string? value)
+    public static PinCode From(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentException("Pin code is required.", nameof(value));

@@ -31,22 +31,10 @@ public sealed class JoinSessionService
         var session = await _sessionRepository.FindByInviteCodeAsync(command.InviteCode, cancellationToken);
         if (session is null)
             return new JoinSessionResult(false, "Session not found");
-        
-        PinCode? pinCode = null;
-        if (!string.IsNullOrWhiteSpace(command.PinCode))
-        {
-            try
-            {
-                pinCode = PinCode.From(command.PinCode);
-            }
-            catch (ArgumentException e)
-            {
-                return new JoinSessionResult(false, e.Message);
-            }
-        }
 
         try
         {
+            PinCode? pinCode = null;
             if (session.PinCode is not null)
             {
                 if (string.IsNullOrWhiteSpace(command.PinCode))
