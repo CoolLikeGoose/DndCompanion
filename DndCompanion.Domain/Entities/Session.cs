@@ -43,6 +43,7 @@ public class Session
 
     public SessionParticipant Join(string displayName, Guid? userId = null, PinCode? pinCode = null)
     {
+        // TODO: PinCode verification now is implemented in the service, delete?
         if (PinCode is not null)
         {
             if (pinCode is null || !pinCode.Equals(PinCode))

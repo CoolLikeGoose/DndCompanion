@@ -47,6 +47,24 @@ public sealed class JoinSessionService
 
         try
         {
+            if (session.PinCode is not null)
+            {
+                if (string.IsNullOrWhiteSpace(command.PinCode))
+                    return new JoinSessionResult(false, "Pin code is required to join this session");
+                
+                try
+                {
+                    pinCode = PinCode.From(command.PinCode);
+                }
+                catch (ArgumentException e)
+                {
+                    return new JoinSessionResult(false, e.Message);
+                }
+                
+                if (!pinCode.Equals(session.PinCode))   
+                    return new JoinSessionResult(false, "Invalid pin code");
+            }
+            
             if (command.ExistingParticipantId.HasValue)
             {
                 var existing = await _sessionRepository.FindParticipantByIdAsync(command.ExistingParticipantId.Value, cancellationToken);
