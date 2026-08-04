@@ -3,10 +3,12 @@
 @using Domain.Entities
 @using Domain.Enums
 @using Web.Components.Shared
+@using Web.Components.Pages.Sessions.Game.Master.Modals
 
 @inject IServiceScopeFactory ScopeFactory
 
 @inject SessionNotificationService SessionNotificationService
+
 @implements IDisposable
 
 @if (_session is null)
@@ -19,14 +21,15 @@ else
         <div class="d-flex align-items-center mb-3">
             <h2 class="mb-0">Master Panel</h2>
         </div>
-        
+
         <h5 class="text-muted mb-2">Characters</h5>
         <div class="row g-2">
             @foreach (var participant in _session.Participants.Where(p => p.Role == SessionRole.Player && p.Character is not null))
             {
                 var hp = participant.Character!.Resources.FirstOrDefault(r => r.Type == ResourceType.HitPoints);
                 <div class="col-6">
-                    <div class="card p-3">
+                    <div class="card p-3 master-card @GetCardClass()"
+                         @onclick="() => OnCardClick(participant)">
                         <div class="fw-semibold">@participant.Character!.Name</div>
                         <div class="small text-muted">@participant.DisplayName</div>
                         @if (hp is not null)
@@ -43,7 +46,7 @@ else
             }
             @if (!_session.Participants.Any(p => p.Role == SessionRole.Player && p.Character is not null))
             {
-                <div class="col-12">    
+                <div class="col-12">
                     <p class="text-muted">No players with characters yet.</p>
                 </div>
             }
@@ -51,13 +54,51 @@ else
     </div>
 }
 
+@if (_session is not null)
+{
+    <div style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1000;">
+        <div class="bg-white shadow rounded-pill px-3 py-2" style="position:relative;">
+            <button class="btn d-flex align-items-center gap-2" @onclick="() => _toolMenuOpen = !_toolMenuOpen">
+                <i class="bi @GetToolIcon()"></i>
+                <span>@GetToolName()</span>
+                <i class="bi @(_toolMenuOpen ? "bi-chevron-up" : "bi-chevron-down")"></i>
+            </button>
+            @if (_toolMenuOpen)
+            {
+                <div class="bg-white shadow rounded-3 p-1"
+                     style="position: absolute; bottom: 110%; right: 0; min-width: 180px;">
+                    <button class="btn w-100 text-start d-flex align-items-center gap-2"
+                            @onclick="() => SelectTool(MasterTool.None)">
+                        <i class="bi bi-slash-circle"></i>
+                        No tool
+                    </button>
+                    <button class="btn w-100 text-start d-flex align-items-center gap-2"
+                            @onclick="() => SelectTool(MasterTool.DamageHeal)">
+                        <i class="bi bi-lightning-fill text-danger"></i>
+                        Damage/Heal
+                    </button>
+                    <button class="btn w-100 text-start d-flex align-items-center gap-2"
+                            @onclick="() => SelectTool(MasterTool.GiveItem)">
+                        <i class="bi bi-bag-plus-fill text-success"></i>
+                        Give Item
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<DamageHealModal @ref="_damageHealModal" SessionId="SessionId" OnSaved="HandleSaved"/>
+
 <SessionNavBar SessionId="@SessionId" ParticipantId="@ParticipantId" Role="@SessionRole.Master"/>
 
 @code {
     [Parameter] public Guid SessionId { get; set; }
-    [SupplyParameterFromQuery(Name = "participantId")] public Guid ParticipantId { get; set; }
 
-    private Domain.Entities.Session? _session;
+    [SupplyParameterFromQuery(Name = "participantId")]
+    public Guid ParticipantId { get; set; }
+
+    private Session? _session;
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,8 +119,74 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
+    // ToolBar
+    private enum MasterTool
+    {
+        None,
+        DamageHeal,
+        GiveItem,
+    }
+
+    private bool _toolMenuOpen = false;
+    private MasterTool _activeTool = MasterTool.None;
+
+    private void SelectTool(MasterTool tool)
+    {
+        _activeTool = tool;
+        _toolMenuOpen = false;
+    }
+
+    private string GetToolIcon() => _activeTool switch
+    {
+        MasterTool.DamageHeal => "bi-lightning-fill text-danger",
+        MasterTool.GiveItem => "bi-bag-plus-fill text-success",
+        _ => "bi-slash-circle"
+    };
+
+    private string GetToolName() => _activeTool switch
+    {
+        MasterTool.DamageHeal => "Damage/Heal",
+        MasterTool.GiveItem => "Give Item",
+        _ => "No Tool"
+    };
+
+    private string GetCardClass() => _activeTool switch
+    {
+        MasterTool.DamageHeal => "tool-damage",
+        MasterTool.GiveItem => "tool-give",
+        _ => ""
+    };
+
+    private DamageHealModal _damageHealModal = null!;
+    private void OnCardClick(SessionParticipant participant) 
+    {
+        switch (_activeTool)
+        {
+            case MasterTool.DamageHeal:
+                _damageHealModal.Open(participant.Id);
+                break;
+            case MasterTool.GiveItem:
+                GiveItem(participant);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private async Task HandleSaved()
+    {
+        await LoadSessionAsync();
+        await SessionNotificationService.NotifyAsync(SessionId);
+    }
+
+    private void GiveItem(SessionParticipant participant)
+    {
+        
+    }
+
     public void Dispose()
     {
         SessionNotificationService.Unsubscribe(SessionId, OnSessionUpdated);
     }
+
 }

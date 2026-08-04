@@ -1,0 +1,16 @@
+﻿.master-card {
+    transition: all 0.15s ease;
+}
+
+.master-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.master-card.tool-damage:hover {
+    border-color: var(--bs-danger) !important;
+}
+
+.master-card.tool-give:hover {
+    border-color: var(--bs-success) !important;
+}
