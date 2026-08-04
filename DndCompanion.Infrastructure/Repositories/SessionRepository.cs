@@ -66,7 +66,6 @@ public sealed class SessionRepository : ISessionRepository
     public async Task<SessionParticipant?> FindParticipantByIdAsync(Guid participantId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.SessionParticipants
-            .AsNoTracking()
             .Include(x => x.Character)
             .ThenInclude(x => x!.Resources)
             .FirstOrDefaultAsync(x => x.Id == participantId, cancellationToken);

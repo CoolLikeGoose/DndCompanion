@@ -11,6 +11,7 @@
 @inject ISessionRepository SessionRepository
 
 @inject SessionNotificationService SessionNotificationService
+@inject IServiceScopeFactory ScopeFactory
 
 @inject AddAbilitySlotService AddAbilitySlotService
 @inject ApplyRestService ApplyRestService
@@ -171,8 +172,9 @@
 
     private async Task OnSessionUpdated()
     {
-        Console.WriteLine($"OnSessionUpdated called for participant {ParticipantId}");
-        await ReloadParticipantAsync();
+        using var scope = ScopeFactory.CreateScope();
+        var repo = scope.ServiceProvider.GetRequiredService<ISessionRepository>();
+        _participant = await repo.FindParticipantByIdAsync(ParticipantId);
         await InvokeAsync(StateHasChanged);
     }
 
