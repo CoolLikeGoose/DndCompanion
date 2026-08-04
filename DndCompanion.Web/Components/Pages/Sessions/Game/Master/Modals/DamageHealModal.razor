@@ -15,9 +15,11 @@
                 <div class="modal-body">
                     <div class="btn-group w-100 mb-3">
                         <button class="btn @(!_isHealing ? "btn-danger" : "btn-outline-danger")"
-                                @onclick="() => _isHealing = false">⚔️ Damage</button>
+                                @onclick="() => _isHealing = false">⚔️ Damage
+                        </button>
                         <button class="btn @(_isHealing ? "btn-success" : "btn-outline-success")"
-                                @onclick="() => _isHealing = true">💚 Heal</button>
+                                @onclick="() => _isHealing = true">💚 Heal
+                        </button>
                     </div>
                     <input type="number" class="form-control" @bind="_damageValue" min="0" placeholder="Amount"/>
                 </div>
@@ -34,31 +36,31 @@
 @code {
     [Parameter] public Guid SessionId { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
-    
+
     private bool _modalOpen = false;
-    
+
     private Guid _targetParticipant;
     private int _damageValue = 0;
     private bool _isHealing = false;
 
-    public void Open(Guid participant)
+    public void Open(Guid participantId)
     {
-        _targetParticipant = participant;
+        _targetParticipant = participantId;
         _damageValue = 0;
         _isHealing = false;
         _modalOpen = true;
     }
-    
+
     private async Task ApplyDamageHeal()
     {
         if (_targetParticipant == Guid.Empty || _damageValue <= 0)
             return;
-        
+
         var delta = _isHealing ? _damageValue : -_damageValue;
-        
+
         using var scope = ScopeFactory.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<ChangeCharacterResourceService>();
-        
+
         await service.ExecuteAsync(new ChangeCharacterResourceCommand(
             ParticipantId: _targetParticipant,
             ResourceType: ResourceType.HitPoints,
@@ -67,7 +69,8 @@
         ));
 
         _modalOpen = false;
-        
+
         await OnSaved.InvokeAsync();
     }
+
 }

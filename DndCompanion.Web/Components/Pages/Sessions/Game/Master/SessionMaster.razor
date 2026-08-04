@@ -90,6 +90,8 @@ else
 
 <DamageHealModal @ref="_damageHealModal" SessionId="SessionId" OnSaved="HandleSaved"/>
 
+<GiveItemModal @ref="_giveItemModal" OnSaved="HandleSaved"/>
+
 <SessionNavBar SessionId="@SessionId" ParticipantId="@ParticipantId" Role="@SessionRole.Master"/>
 
 @code {
@@ -158,7 +160,9 @@ else
     };
 
     private DamageHealModal _damageHealModal = null!;
-    private void OnCardClick(SessionParticipant participant) 
+    private GiveItemModal _giveItemModal = null!;
+
+    private void OnCardClick(SessionParticipant participant)
     {
         switch (_activeTool)
         {
@@ -166,7 +170,7 @@ else
                 _damageHealModal.Open(participant.Id);
                 break;
             case MasterTool.GiveItem:
-                GiveItem(participant);
+                _giveItemModal.Open(participant.Id);
                 break;
             default:
                 break;
@@ -177,11 +181,6 @@ else
     {
         await LoadSessionAsync();
         await SessionNotificationService.NotifyAsync(SessionId);
-    }
-
-    private void GiveItem(SessionParticipant participant)
-    {
-        
     }
 
     public void Dispose()

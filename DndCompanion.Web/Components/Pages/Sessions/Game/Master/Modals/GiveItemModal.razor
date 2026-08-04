@@ -1,0 +1,107 @@
+﻿@using DndCompanion.Application.Features.Characters.Items.AddItem
+
+@inject AddItemService AddItemService
+
+@if (_modalOpen)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add item</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" @bind="_formName" placeholder="e.g. Longsword"/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" @bind="_formDescription" rows="3"
+                                  placeholder="Optional"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Source URL</label>
+                        <input type="url" class="form-control" @bind="_formSourceUrl" placeholder="https://dnd.su/..."/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" @bind="_formQuantity" min="0"/>
+                    </div>
+                    @if (_error is not null)
+                    {
+                        <div class="alert alert-danger">@_error</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                    <button class="btn btn-primary" @onclick="SaveItem" disabled="@_isBusy">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private Guid? _targetParticipant;
+    private bool _isBusy;
+    private string? _error;
+
+    private bool _modalOpen;
+    private string _formName = string.Empty;
+    private string? _formDescription;
+    private string? _formSourceUrl;
+    private int _formQuantity;
+
+    public void Open(Guid participantId)
+    {
+        _targetParticipant = participantId;
+        _formName = string.Empty;
+        _formDescription = null;
+        _formSourceUrl = null;
+        _formQuantity = 1;
+        _modalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        _modalOpen = false;
+        _error = null;
+    }
+
+    private async Task SaveItem()
+    {
+        if (string.IsNullOrWhiteSpace(_formName))
+        {
+            return;
+        }
+
+        _isBusy = true;
+        _error = null;
+
+        var result = await AddItemService.ExecuteAsync(
+            new AddItemCommand(
+                _targetParticipant!.Value,
+                _formName,
+                _formDescription,
+                _formSourceUrl,
+                _formQuantity));
+
+        if (!result.IsSuccess)
+        {
+            _error = result.ErrorMessage;
+            _isBusy = false;
+            return;
+        }
+
+        _isBusy = false;
+        CloseModal();
+
+        await OnSaved.InvokeAsync();
+    }
+
+}
