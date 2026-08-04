@@ -6,10 +6,14 @@
 @using Domain.Entities
 @using Web.Components.Shared
 
+@inject SessionNotificationService SessionNotificationService
+
 @inject ISessionRepository SessionRepository
 @inject AddItemService AddItemService
 @inject RemoveItemService RemoveItemService
 @inject UpdateItemService UpdateItemService
+
+@implements IDisposable
 
 @if (_participant?.Character is not null)
 {
@@ -23,12 +27,12 @@
                 </button>
             </div>
         </div>
-        
+
         @if (_editMode)
         {
             <button class="btn btn-outline-primary w-100 mb-3" @onclick="OpenAddModal">+ Add item</button>
         }
-        
+
         @if (!_participant.Character.Items.Any())
         {
             <p class="text-muted">No items yet.</p>
@@ -37,7 +41,7 @@
         {
             @foreach (var item in _participant.Character.Items.OrderBy(i => i.Name))
             {
-                <ItemCard 
+                <ItemCard
                     Item="item"
                     IsEditMode="_editMode"
                     OnEdit="OpenEditModal"
@@ -63,7 +67,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Description</label>
-                        <textarea class="form-control" @bind="_formDescription" rows="3" placeholder="Optional"></textarea>
+                        <textarea class="form-control" @bind="_formDescription" rows="3"
+                                  placeholder="Optional"></textarea>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Source URL</label>
@@ -88,19 +93,21 @@
     <div class="modal-backdrop fade show"></div>
 }
 
-<SessionNavBar 
+<SessionNavBar
     SessionId="SessionId"
     ParticipantId="ParticipantId"/>
 
 @code {
     [Parameter] public Guid SessionId { get; set; }
-    [SupplyParameterFromQuery(Name = "participantId")] public Guid ParticipantId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "participantId")]
+    public Guid ParticipantId { get; set; }
 
     private SessionParticipant? _participant;
     private bool _editMode;
     private bool _isBusy;
     private string? _error;
-    
+
     private bool _modalOpen;
     private Item? _editedItem;
     private string _formName = string.Empty;
@@ -111,13 +118,20 @@
     protected override async Task OnInitializedAsync()
     {
         await ReloadAsync();
+        SessionNotificationService.Subscribe(SessionId, OnSessionUpdated);
+    }
+
+    private async Task OnSessionUpdated()
+    {
+        await ReloadAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ReloadAsync()
     {
         _participant = await SessionRepository.FindParticipantByIdWithItemsAsync(ParticipantId);
     }
-    
+
     private void OpenAddModal()
     {
         _editedItem = null;
@@ -127,7 +141,7 @@
         _formQuantity = 1;
         _modalOpen = true;
     }
-    
+
     private void OpenEditModal(Item item)
     {
         _editedItem = item;
@@ -150,7 +164,7 @@
         {
             return;
         }
-        
+
         _isBusy = true;
         _error = null;
 
@@ -163,7 +177,7 @@
                     _formDescription,
                     _formSourceUrl,
                     _formQuantity));
-            
+
             if (!result.IsSuccess)
             {
                 _error = result.ErrorMessage;
@@ -181,7 +195,7 @@
                     _formDescription,
                     _formSourceUrl,
                     _formQuantity));
-            
+
             if (!result.IsSuccess)
             {
                 _error = result.ErrorMessage;
@@ -194,7 +208,7 @@
         CloseModal();
         await ReloadAsync();
     }
-    
+
     private async Task RemoveItem(Guid itemId)
     {
         _isBusy = true;
@@ -202,9 +216,9 @@
 
         var result = await RemoveItemService.ExecuteAsync(
             new RemoveItemCommand(ParticipantId, itemId));
-        
+
         _isBusy = false;
-        
+
         if (!result.IsSuccess)
         {
             _error = result.ErrorMessage;
@@ -213,4 +227,10 @@
 
         await ReloadAsync();
     }
+
+    public void Dispose()
+    {
+        SessionNotificationService.Unsubscribe(SessionId, OnSessionUpdated);
+    }
+
 }
