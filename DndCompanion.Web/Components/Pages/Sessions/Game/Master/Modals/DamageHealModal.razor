@@ -78,7 +78,7 @@
     private int _currentHp = 0;
     private int _maxHp = 0;
 
-    public async void Open(Guid participantId, int currentHp, int maxHp)
+    public void Open(Guid participantId, int currentHp, int maxHp)
     {
         _targetParticipant = participantId;
         _outValue = 0;
@@ -87,6 +87,11 @@
         _currentHp = currentHp;
         _maxHp = maxHp;
 
+        _ = FocusInputAsync();
+    }
+
+    private async Task FocusInputAsync()
+    {
         await Task.Delay(50);
         await _inputRef.FocusAsync();
     }
@@ -100,6 +105,9 @@
 
     private int EvaluateExpression(string input)
     {
+        if (string.IsNullOrWhiteSpace(input) || input.Length > 50) return 0;
+        if (!System.Text.RegularExpressions.Regex.IsMatch(input, @"^[\d\+\-\*\/\s\(\)]+$")) return 0;
+        
         try
         {
             var result = new System.Data.DataTable().Compute(input, null);
