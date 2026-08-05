@@ -25,7 +25,7 @@ public class UpdateInfoService
             return new UpdateInfoResult(false, "Participant has no character assigned");
 
         var character =
-            await _characterRepository.FindByIdWithInfoAndStatsAsync(participant.CharacterId.Value, cancellationToken);
+            await _characterRepository.FindByIdWithInfoAsync(participant.CharacterId.Value, cancellationToken);
         if (character is null)
             return new UpdateInfoResult(false, "Character not found");
 
@@ -46,9 +46,9 @@ public class UpdateInfoService
                 languageProficiencies: command.LanguageProficiencies,
                 toolProficiencies: command.ToolProficiencies
             );
-            
+
             await _characterRepository.SaveChangesAsync(cancellationToken);
-            
+
             return new UpdateInfoResult(true);
         }
         catch (Exception e)

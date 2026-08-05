@@ -14,7 +14,7 @@ public class UpdateStatsService
         _sessionRepository = sessionRepository;
         _characterRepository = characterRepository;
     }
-    
+
     public async Task<UpdateStatsResult> ExecuteAsync(
         UpdateStatsCommand command, CancellationToken cancellationToken = default)
     {
@@ -25,7 +25,7 @@ public class UpdateStatsService
             return new UpdateStatsResult(false, "Participant has no character assigned");
 
         var character =
-            await _characterRepository.FindByIdWithInfoAndStatsAsync(participant.CharacterId.Value, cancellationToken);
+            await _characterRepository.FindByIdWithStatsAsync(participant.CharacterId.Value, cancellationToken);
         if (character is null)
             return new UpdateStatsResult(false, "Character not found");
 
@@ -39,9 +39,9 @@ public class UpdateStatsService
                 wisdom: command.Wisdom,
                 charisma: command.Charisma
             );
-            
+
             await _characterRepository.SaveChangesAsync(cancellationToken);
-            
+
             return new UpdateStatsResult(true);
         }
         catch (Exception e)

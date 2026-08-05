@@ -8,12 +8,12 @@ namespace Infrastructure.Repositories;
 public sealed class CharacterRepository : ICharacterRepository
 {
     private readonly DndCompanionDbContext _dbContext;
-    
+
     public CharacterRepository(DndCompanionDbContext dbContext)
     {
         _dbContext = dbContext;
     }
-    
+
     public async Task AddAsync(Character character, CancellationToken cancellationToken = default)
     {
         await _dbContext.Characters.AddAsync(character, cancellationToken);
@@ -50,7 +50,8 @@ public sealed class CharacterRepository : ICharacterRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public Task<Character?> FindByIdWithInfoAndStatsAsync(Guid characterId, CancellationToken cancellationToken = default)
+    public Task<Character?> FindByIdWithInfoAndStatsAsync(Guid characterId,
+        CancellationToken cancellationToken = default)
     {
         return _dbContext.Characters
             .Where(x => x.Id == characterId)
@@ -59,7 +60,25 @@ public sealed class CharacterRepository : ICharacterRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public Task<Character?> FindByIdWithItemsAndResourcesAsync(Guid characterId, CancellationToken cancellationToken = default)
+    public Task<Character?> FindByIdWithInfoAsync(Guid characterId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Characters
+            .Where(x => x.Id == characterId)
+            .Include(x => x.Info)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<Character?> FindByIdWithStatsAsync(Guid characterId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Characters
+            .Where(x => x.Id == characterId)
+            .Include(x => x.Stats)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+
+    public Task<Character?> FindByIdWithItemsAndResourcesAsync(Guid characterId,
+        CancellationToken cancellationToken = default)
     {
         return _dbContext.Characters
             .Where(x => x.Id == characterId)
@@ -70,6 +89,6 @@ public sealed class CharacterRepository : ICharacterRepository
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return _dbContext.SaveChangesAsync(cancellationToken);   
+        return _dbContext.SaveChangesAsync(cancellationToken);
     }
 }
