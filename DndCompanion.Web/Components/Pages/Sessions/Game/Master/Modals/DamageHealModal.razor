@@ -9,23 +9,54 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">@(_isHealing ? "Heal Participant" : "Deal Damage")</h5>
+                    <h5 class="modal-title">Damage/Heal Participant</h5>
                     <button type="button" class="btn-close" @onclick="() => _modalOpen = false"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="btn-group w-100 mb-3">
-                        <button class="btn @(!_isHealing ? "btn-danger" : "btn-outline-danger")"
-                                @onclick="() => _isHealing = false">⚔️ Damage
-                        </button>
-                        <button class="btn @(_isHealing ? "btn-success" : "btn-outline-success")"
-                                @onclick="() => _isHealing = true">💚 Heal
-                        </button>
+                    @{
+                        var afterDamage = Math.Clamp(_currentHp - _outValue, 0, _maxHp);
+                        var afterHeal = Math.Clamp(_currentHp + _outValue, 0, _maxHp);
+
+                        var damagePercent = (double)Math.Max(_currentHp - afterDamage, 0) / _maxHp * 100;
+                        var healPercent = (double)Math.Max(afterHeal - _currentHp, 0) / _maxHp * 100;
+                        var currentPercent = (double)_currentHp / _maxHp * 100;
+
+                        var endGrey = currentPercent - damagePercent;
+
+                        <div>
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>HP</span>
+                                <span>@_currentHp/@_maxHp</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-transparent" style="width: @endGrey.ToString("F0")%"></div>
+                                <div class="progress-bar bg-danger progress-bar-striped"
+                                     style="width: @damagePercent.ToString("F0")%"></div>
+                                <div class="progress-bar bg-warning" style="width: 1%;"></div>
+                                <div class="progress-bar bg-success progress-bar-striped"
+                                     style="width: @healPercent.ToString("F0")%"></div>
+                            </div>
+                        </div>
+                    }
+
+                    <hr/>
+                    <div class="text-muted small my-2">Help</div>
+
+                    <div class="input-group">
+                        <input type="text" class="form-control w-auto" value="@_valueExpression"
+                               @oninput="OnExpressionInput" placeholder="e.g. 1+13-2" @ref="_inputRef"/>
+                        <input type="text" class="form-control w-25" disabled value="=@_outValue"/>
                     </div>
-                    <input type="number" class="form-control" @bind="_damageValue" min="0" placeholder="Amount"/>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="() => _modalOpen = false">Cancel</button>
-                    <button type="button" class="btn btn-danger" @onclick="ApplyDamageHeal">Apply</button>
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="btn btn-success w-25"
+                            @onclick="() => ApplyDamageHeal(isHealing: true)">Heal
+                    </button>
+                    <button type="button" class="btn btn-secondary w-auto" @onclick="() => _modalOpen = false">Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger w-25"
+                            @onclick="() => ApplyDamageHeal(isHealing: false)">Damage
+                    </button>
                 </div>
             </div>
         </div>
@@ -37,26 +68,55 @@
     [Parameter] public Guid SessionId { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
 
+    private ElementReference _inputRef;
+
     private bool _modalOpen = false;
 
     private Guid _targetParticipant;
-    private int _damageValue = 0;
-    private bool _isHealing = false;
+    private int _outValue = 0;
+    private string? _valueExpression;
+    private int _currentHp = 0;
+    private int _maxHp = 0;
 
-    public void Open(Guid participantId)
+    public async void Open(Guid participantId, int currentHp, int maxHp)
     {
         _targetParticipant = participantId;
-        _damageValue = 0;
-        _isHealing = false;
+        _outValue = 0;
+        _valueExpression = null;
         _modalOpen = true;
+        _currentHp = currentHp;
+        _maxHp = maxHp;
+
+        await Task.Delay(50);
+        await _inputRef.FocusAsync();
     }
 
-    private async Task ApplyDamageHeal()
+    private void OnExpressionInput(ChangeEventArgs e)
     {
-        if (_targetParticipant == Guid.Empty || _damageValue <= 0)
+        _valueExpression = e.Value?.ToString() ?? string.Empty;
+        var raw = EvaluateExpression(_valueExpression);
+        _outValue = Math.Max(0, raw);
+    }
+
+    private int EvaluateExpression(string input)
+    {
+        try
+        {
+            var result = new System.Data.DataTable().Compute(input, null);
+            return Convert.ToInt32(result);
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private async Task ApplyDamageHeal(bool isHealing)
+    {
+        if (_targetParticipant == Guid.Empty || _outValue <= 0)
             return;
 
-        var delta = _isHealing ? _damageValue : -_damageValue;
+        var delta = isHealing ? _outValue : -_outValue;
 
         using var scope = ScopeFactory.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<ChangeCharacterResourceService>();

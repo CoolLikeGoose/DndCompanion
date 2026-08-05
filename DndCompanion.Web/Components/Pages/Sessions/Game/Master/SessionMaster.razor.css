@@ -7,10 +7,34 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
 }
 
+.btn.tool-neutral {
+    background-color: rgba(var(--tool-neutral), 0.1) !important;
+}
+
+.tool-neutral-icon {
+    color: rgba(var(--tool-neutral), 1) !important;
+}
+
 .master-card.tool-damage:hover {
-    border-color: var(--bs-danger) !important;
+    border-color: rgba(var(--tool-damage), 1) !important;
+}
+
+.btn.tool-damage {
+    background-color: rgba(var(--tool-damage), 0.1) !important;
+}
+
+.tool-damage-icon {
+    color: rgba(var(--tool-damage), 1) !important;
 }
 
 .master-card.tool-give:hover {
-    border-color: var(--bs-success) !important;
+    border-color: rgba(var(--tool-give), 1) !important;
+}
+
+.btn.tool-give {
+    background-color: rgba(var(--tool-give), 0.1) !important;
+}
+
+.tool-give-icon::before {
+    color: rgba(var(--tool-give), 1) !important;
 }
