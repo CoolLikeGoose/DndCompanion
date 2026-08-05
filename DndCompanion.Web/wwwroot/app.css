@@ -6,3 +6,14 @@ html, body {
     color: var(--bs-danger);
     font-size: 0.875rem;
 }
+
+:root {
+    --tool-damage: 220, 53, 69;
+    --tool-give: 25, 135, 84;
+    --tool-neutral: 108, 117, 125;
+}
+
+.tool {
+    outline: none !important;
+    box-shadow: none !important;
+}

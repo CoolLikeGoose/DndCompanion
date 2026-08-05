@@ -11,9 +11,12 @@
 @inject ISessionRepository SessionRepository
 
 @inject SessionNotificationService SessionNotificationService
+@inject IServiceScopeFactory ScopeFactory
 
 @inject AddAbilitySlotService AddAbilitySlotService
 @inject ApplyRestService ApplyRestService
+
+@implements IDisposable
 
 @if (_loadFailed)
 {
@@ -164,6 +167,15 @@
     {
         await ReloadParticipantAsync();
         await SessionNotificationService.NotifyAsync(SessionId);
+        SessionNotificationService.Subscribe(SessionId, OnSessionUpdated);
+    }
+
+    private async Task OnSessionUpdated()
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var repo = scope.ServiceProvider.GetRequiredService<ISessionRepository>();
+        _participant = await repo.FindParticipantByIdAsync(ParticipantId);
+        await InvokeAsync(StateHasChanged);
     }
 
     private Resource? FindResource(ResourceType type, string? name)
@@ -246,6 +258,11 @@
 
         await ReloadParticipantAsync();
         await SessionNotificationService.NotifyAsync(SessionId);
+    }
+
+    public void Dispose()
+    {
+        SessionNotificationService.Unsubscribe(SessionId, OnSessionUpdated);
     }
 
 }

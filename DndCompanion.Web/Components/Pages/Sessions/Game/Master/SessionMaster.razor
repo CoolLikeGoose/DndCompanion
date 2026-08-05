@@ -3,10 +3,12 @@
 @using Domain.Entities
 @using Domain.Enums
 @using Web.Components.Shared
+@using Web.Components.Pages.Sessions.Game.Master.Modals
 
 @inject IServiceScopeFactory ScopeFactory
 
 @inject SessionNotificationService SessionNotificationService
+
 @implements IDisposable
 
 @if (_session is null)
@@ -16,26 +18,30 @@
 else
 {
     <div class="container py-3">
-        <div class="d-flex align-items-center mb-3">
-            <h2 class="mb-0">Master Panel</h2>
-        </div>
-        
-        <h5 class="text-muted mb-2">Characters</h5>
+        <h3 class="mb-2">Characters</h3>
         <div class="row g-2">
             @foreach (var participant in _session.Participants.Where(p => p.Role == SessionRole.Player && p.Character is not null))
             {
                 var hp = participant.Character!.Resources.FirstOrDefault(r => r.Type == ResourceType.HitPoints);
                 <div class="col-6">
-                    <div class="card p-3">
+                    <div class="card p-3 master-card @GetCardClass()"
+                         @onclick="() => OnCardClick(participant)">
                         <div class="fw-semibold">@participant.Character!.Name</div>
                         <div class="small text-muted">@participant.DisplayName</div>
                         @if (hp is not null)
                         {
+                            var percent = hp.MaxValue > 0 ? (double)hp.CurrentValue / hp.MaxValue * 100 : 0;
+                            var hue = (int)(percent * 1.2);
+                            var barStyle = $"width: {percent:F0}%; background-color: hsl({hue}, 80%, 45%);";
+                            
                             <div class="mt-2">
-                                <span class="small text-muted">HP </span>
-                                <span class="fw-semibold @(hp.CurrentValue == 0 ? "text-danger" : "")">
-                                    @hp.CurrentValue/@hp.MaxValue
-                                </span>
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <span>HP</span>
+                                    <span>@hp.CurrentValue/@hp.MaxValue</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar" style="@barStyle"></div>
+                                </div>
                             </div>
                         }
                     </div>
@@ -43,21 +49,52 @@ else
             }
             @if (!_session.Participants.Any(p => p.Role == SessionRole.Player && p.Character is not null))
             {
-                <div class="col-12">    
+                <div class="col-12">
                     <p class="text-muted">No players with characters yet.</p>
                 </div>
             }
         </div>
     </div>
+    
+    <div style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1000;">
+        <div class="bg-primary p-1 rounded-3 shadow">
+            <p class="text-center text-white mb-0">
+                Tools
+            </p>
+            <div class="bg-white rounded-3 p-2">
+                <button class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.None ? "tool-neutral" : "")"
+                        @onclick="() => SelectTool(MasterTool.None)">
+                    <i class="bi bi-slash-circle tool-neutral-icon"></i>
+                    No tool
+                </button>
+                <button class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.DamageHeal ? "tool-damage" : "")"
+                        @onclick="() => SelectTool(MasterTool.DamageHeal)">
+                    <i class="bi bi-lightning-fill tool-damage-icon"></i>
+                    Damage/Heal
+                </button>
+                <button class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.GiveItem ? "tool-give" : "")"
+                        @onclick="() => SelectTool(MasterTool.GiveItem)">
+                    <i class="bi bi-bag-plus-fill tool-give-icon"></i>
+                    Give Item
+                </button>
+            </div>
+        </div>
+    </div>
 }
+
+<DamageHealModal @ref="_damageHealModal" SessionId="SessionId" OnSaved="HandleSaved"/>
+
+<GiveItemModal @ref="_giveItemModal" OnSaved="HandleSaved"/>
 
 <SessionNavBar SessionId="@SessionId" ParticipantId="@ParticipantId" Role="@SessionRole.Master"/>
 
 @code {
     [Parameter] public Guid SessionId { get; set; }
-    [SupplyParameterFromQuery(Name = "participantId")] public Guid ParticipantId { get; set; }
 
-    private Domain.Entities.Session? _session;
+    [SupplyParameterFromQuery(Name = "participantId")]
+    public Guid ParticipantId { get; set; }
+
+    private Session? _session;
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,8 +115,56 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
+    // ToolBar
+    private enum MasterTool
+    {
+        None,
+        DamageHeal,
+        GiveItem,
+    }
+
+    private MasterTool _activeTool = MasterTool.None;
+
+    private void SelectTool(MasterTool tool)
+    {
+        _activeTool = tool;
+    }
+
+    private string GetCardClass() => _activeTool switch
+    {
+        MasterTool.DamageHeal => "tool-damage",
+        MasterTool.GiveItem => "tool-give",
+        _ => ""
+    };
+
+    private DamageHealModal _damageHealModal = null!;
+    private GiveItemModal _giveItemModal = null!;
+
+    private void OnCardClick(SessionParticipant participant)
+    {
+        switch (_activeTool)
+        {
+            case MasterTool.DamageHeal:
+                var hp = participant.Character!.Resources.FirstOrDefault(r => r.Type == ResourceType.HitPoints);
+                _damageHealModal.Open(participant.Id, hp?.CurrentValue ?? 0, hp?.MaxValue ?? 0);
+                break;
+            case MasterTool.GiveItem:
+                _giveItemModal.Open(participant.Id);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private async Task HandleSaved()
+    {
+        await LoadSessionAsync();
+        await SessionNotificationService.NotifyAsync(SessionId);
+    }
+
     public void Dispose()
     {
         SessionNotificationService.Unsubscribe(SessionId, OnSessionUpdated);
     }
+
 }
