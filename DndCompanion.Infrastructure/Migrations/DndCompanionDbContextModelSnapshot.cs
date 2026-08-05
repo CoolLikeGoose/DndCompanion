@@ -25,6 +25,12 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("DeathSavesFailures")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DeathSavesSuccesses")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)

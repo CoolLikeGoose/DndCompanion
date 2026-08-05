@@ -1,6 +1,7 @@
 ﻿@page "/sessions/{SessionId:guid}/character"
 @using DndCompanion.Application.Abstractions.Persistence
 @using DndCompanion.Application.Features.Characters.Resources.AddAbilitySlot
+@using DndCompanion.Application.Features.Characters.Resources.AddDeathSave
 @using DndCompanion.Application.Features.Characters.Resources.ApplyRest
 @using Web.Components.Shared
 @using Domain.Entities
@@ -52,7 +53,6 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h5 class="mb-0">Core resources</h5>
-                                    @* <span class="badge bg-dark">Live</span> *@
                                 </div>
 
                                 @{
@@ -72,6 +72,52 @@
                                     IsGlobalEditMode="_globalEdit"
                                     Disabled="_isBusy"
                                     OnEditClick='() => OpenEditorModal(ResourceType.HitDice, StaticResourceNames.HitDice)'/>
+
+                                @if (hp.CurrentValue <= 0)
+                                {
+                                    var successfulDeathThrows = _participant?.Character?.DeathSavesSuccesses ?? 0;
+                                    var failedDeathThrows = _participant?.Character?.DeathSavesFailures ?? 0;
+
+                                    <div class="card mt-2 border-danger">
+                                        <div class="card-body py-2">
+                                            <div class="small fw-semibold text-danger mb-2">
+                                                Death Saving Throws
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="text-muted" style="width: 60px;">Success</span>
+                                                @for (int i = 0; i < 3; i++)
+                                                {
+                                                    var filled = i < successfulDeathThrows;
+                                                    <span style="
+                                                        width: 18px;
+                                                        height: 18px;
+                                                        border-radius: 50%;
+                                                        display: inline-block;
+                                                        border: 2px solid #198754;
+                                                        background: @(filled ? "#198754" : "transparent");"></span>
+                                                }
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="text-muted" style="width: 60px;">Failure</span>
+                                                @for (int i = 0; i < 3; i++)
+                                                {
+                                                    var filled = i < failedDeathThrows;
+                                                    <span style="
+                                                        width: 18px;
+                                                        height: 18px;
+                                                        border-radius: 50%;
+                                                        display: inline-block;
+                                                        border: 2px solid #dc3545;
+                                                        background: @(filled ? "#dc3545" : "transparent");"></span>
+                                                }
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-danger mt-2 w-100"
+                                                    @onclick="OpenAddThrowModal">
+                                                Add Throw
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
                             </div>
                         </div>
                     </div>
@@ -142,6 +188,8 @@
 <EditorModal @ref="_editorModal" ParticipantId="ParticipantId" IsGlobalEdit="_globalEdit" OnSaved="HandleSaved"/>
 
 <AddAbilityModal @ref="_addAbilityModal" IsBusy="_isBusy" OnAdd="HandleAddAbility"/>
+
+<AddThrowModal @ref="_addThrowModal" ParticipantId="ParticipantId" OnSaved="HandleAddThrow"/>
 
 <SessionNavBar SessionId="SessionId" ParticipantId="ParticipantId"/>
 
@@ -238,6 +286,20 @@
         }
 
         _resourceError = null;
+    }
+
+    // Death saving throws
+    private AddThrowModal _addThrowModal = null!;
+
+    private void OpenAddThrowModal()
+    {
+        _addThrowModal.Open(_participant?.Character?.DeathSavesSuccesses ?? 0, _participant?.Character?.DeathSavesFailures ?? 0);
+    }
+
+    private async Task HandleAddThrow()
+    {
+        await ReloadParticipantAsync();
+        await SessionNotificationService.NotifyAsync(SessionId);
     }
 
     private async Task ApplyLongRest()

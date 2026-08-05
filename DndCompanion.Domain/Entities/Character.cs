@@ -13,6 +13,9 @@ public class Character
     public Guid? UserId { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
+    public int DeathSavesSuccesses { get; private set; }
+    public int DeathSavesFailures { get; private set; }
+
     private readonly List<Resource> _resources = new();
     public IReadOnlyCollection<Resource> Resources => _resources.AsReadOnly();
 
@@ -69,6 +72,12 @@ public class Character
     public Resource ChangeResource(ResourceType type, string name, int delta)
     {
         var resource = GetResource(type, name);
+        
+        if (type == ResourceType.HitPoints && delta > 0 && resource.CurrentValue == 0)
+        {
+            ResetDeathSaves();
+        }
+        
         resource.Change(delta);
         return resource;
     }
@@ -76,6 +85,12 @@ public class Character
     public Resource SetResource(ResourceType type, string name, int value)
     {
         var resource = GetResource(type, name);
+        
+        if (type == ResourceType.HitPoints && value > 0 && resource.CurrentValue == 0)
+        {
+            ResetDeathSaves();
+        }
+        
         resource.SetCurrent(value);
         return resource;
     }
@@ -169,4 +184,15 @@ public class Character
         _info.Update(characterClass, level, race, age, background, alignment, experiencePoints, personalityTraits,
             ideals, bonds, flaws, languageProficiencies, toolProficiencies);
     }
+
+    // Death Saves
+    public void AddDeathSave(bool isSuccess)
+    {
+        if (isSuccess)
+            DeathSavesSuccesses = Math.Min(DeathSavesSuccesses + 1, 3);
+        else
+            DeathSavesFailures = Math.Min(DeathSavesFailures + 1, 3);
+    }
+
+    private void ResetDeathSaves() => (DeathSavesSuccesses, DeathSavesFailures) = (0, 0);
 }

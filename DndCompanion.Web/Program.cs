@@ -8,6 +8,7 @@ using DndCompanion.Application.Features.Characters.Items.AddItem;
 using DndCompanion.Application.Features.Characters.Items.RemoveItem;
 using DndCompanion.Application.Features.Characters.Items.UpdateItem;
 using DndCompanion.Application.Features.Characters.Resources.AddAbilitySlot;
+using DndCompanion.Application.Features.Characters.Resources.AddDeathSave;
 using DndCompanion.Application.Features.Characters.Resources.ApplyRest;
 using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource;
 using DndCompanion.Application.Features.Characters.Resources.SetCharacterResource;
@@ -68,6 +69,7 @@ builder.Services.AddScoped<CreateCharacterService>();
 builder.Services.AddScoped<SelectCharacterService>();
 builder.Services.AddScoped<UpdateInfoService>();
 builder.Services.AddScoped<UpdateStatsService>();
+builder.Services.AddScoped<AddDeathSaveService>();
 
 // >>>> items
 builder.Services.AddScoped<AddItemService>();

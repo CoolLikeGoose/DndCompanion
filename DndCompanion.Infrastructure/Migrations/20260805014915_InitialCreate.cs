@@ -18,7 +18,9 @@ namespace Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     UserId = table.Column<Guid>(type: "TEXT", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    DeathSavesSuccesses = table.Column<int>(type: "INTEGER", nullable: false),
+                    DeathSavesFailures = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {

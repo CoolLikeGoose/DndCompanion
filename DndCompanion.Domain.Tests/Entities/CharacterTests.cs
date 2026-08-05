@@ -6,6 +6,17 @@ namespace DndCompanion.Domain.Tests.Entities;
 public class CharacterTests
 {
     private static Character CreateCharacter() => Character.Create("Test Character", Guid.NewGuid());
+    private static Character CreateCharacterWithResource(
+        ResourceType type,
+        int maximum,
+        RecoveryType recovery,
+        string name
+    )
+    {
+        var character = CreateCharacter();
+        character.AddResource(type, maximum, recovery, name);
+        return character;
+    }
     
     public class AddResource
     {
@@ -241,6 +252,92 @@ public class CharacterTests
             var character = CreateCharacter();
             character.UpdateInfo(characterClass: "");
             Assert.Null(character.Info.Class);
+        }
+    }
+    
+    public class DeathSave
+    {
+        [Fact]
+        public void IncrementsSuccess_WhenSuccess()
+        {
+            var character = CreateCharacterWithResource(
+                ResourceType.HitPoints,
+                10,
+                RecoveryType.LongRest,
+                StaticResourceNames.HitPoints
+            );
+            character.SetResource(ResourceType.HitPoints, StaticResourceNames.HitPoints, 0);
+            character.AddDeathSave(true);
+            Assert.Equal(1, character.DeathSavesSuccesses);
+            Assert.Equal(0, character.DeathSavesFailures);
+        }
+        
+        [Fact]
+        public void IncrementsFailure_WhenFailure()
+        {
+            var character = CreateCharacterWithResource(
+                ResourceType.HitPoints,
+                10,
+                RecoveryType.LongRest,
+                StaticResourceNames.HitPoints
+            );
+            character.SetResource(ResourceType.HitPoints, StaticResourceNames.HitPoints, 0);
+            character.AddDeathSave(false);
+            Assert.Equal(0, character.DeathSavesSuccesses);
+            Assert.Equal(1, character.DeathSavesFailures);
+        }
+        
+        [Fact]
+        public void Stays_WhenMaxed()
+        {
+            var character = CreateCharacterWithResource(
+                ResourceType.HitPoints,
+                10,
+                RecoveryType.LongRest,
+                StaticResourceNames.HitPoints
+            );
+            character.SetResource(ResourceType.HitPoints, StaticResourceNames.HitPoints, 0);
+            character.AddDeathSave(false);
+            character.AddDeathSave(false);
+            character.AddDeathSave(false);
+            character.AddDeathSave(false);
+            Assert.Equal(0, character.DeathSavesSuccesses);
+            Assert.Equal(3, character.DeathSavesFailures);
+        }
+        
+        [Fact]
+        public void Resets_WhenHealedViaSet()
+        {
+            var character = CreateCharacterWithResource(
+                ResourceType.HitPoints,
+                10,
+                RecoveryType.LongRest,
+                StaticResourceNames.HitPoints
+            );
+            character.SetResource(ResourceType.HitPoints, StaticResourceNames.HitPoints, 0);
+            character.AddDeathSave(false);
+            character.AddDeathSave(false);
+            Assert.Equal(2, character.DeathSavesFailures);
+            
+            // Simulate healing
+            character.SetResource(ResourceType.HitPoints, StaticResourceNames.HitPoints, 1);
+            
+            // Add a death save after healing
+            Assert.Equal(0, character.DeathSavesSuccesses);
+            Assert.Equal(0, character.DeathSavesFailures);
+        }
+        
+        [Fact]
+        public void Resets_WhenHealedViaChange()
+        {
+            var character = CreateCharacterWithResource(
+                ResourceType.HitPoints, 10, RecoveryType.LongRest, StaticResourceNames.HitPoints);
+            character.SetResource(ResourceType.HitPoints, StaticResourceNames.HitPoints, 0);
+            character.AddDeathSave(false);
+    
+            character.ChangeResource(ResourceType.HitPoints, StaticResourceNames.HitPoints, 5);
+    
+            Assert.Equal(0, character.DeathSavesFailures);
         }
     }
 }

@@ -1,0 +1,102 @@
+﻿@using DndCompanion.Application.Features.Characters.Resources.AddDeathSave
+
+@inject AddDeathSaveService AddDeathSaveService
+
+@if (_modalOpen)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Death Saving Throw</h5>
+                    <button type="button" class="btn-close" @onclick="() => _modalOpen = false"></button>
+                </div>
+                <div class="modal-body">
+                    @if (_error is not null)
+                    {
+                        <div class="alert alert-danger mt-2">@_error</div>
+                    }
+                    
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="text-muted" style="width: 60px;">Success</span>
+                        @for (int i = 0; i < 3; i++)
+                        {
+                            var filled = i < _setSuccesses;
+                            <span style="
+                                width: 18px;
+                                height: 18px;
+                                border-radius: 50%;
+                                display: inline-block;
+                                border: 2px solid #198754;
+                                background: @(filled ? "#198754" : "transparent");"></span>
+                        }
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="text-muted" style="width: 60px;">Failure</span>
+                        @for (int i = 0; i < 3; i++)
+                        {
+                            var filled = i < _setFailures;
+                            <span style="
+                                width: 18px;
+                                height: 18px;
+                                border-radius: 50%;
+                                display: inline-block;
+                                border: 2px solid #dc3545;
+                                background: @(filled ? "#dc3545" : "transparent");"></span>
+                        }
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-success" @onclick="() => AddDeathSavingThrow(true)">
+                            Add Success
+                        </button>
+                        <button class="btn btn-danger" @onclick="() => AddDeathSavingThrow(false)">
+                            Add Failure
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public Guid ParticipantId { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private bool _modalOpen = false;
+    private string? _error = null;
+
+    private int _setSuccesses = 0;
+    private int _setFailures = 0;
+
+    public void Open(int successes, int failures)
+    {
+        _setSuccesses = successes;
+        _setFailures = failures;
+        _modalOpen = true;
+    }
+    
+    private async Task AddDeathSavingThrow(bool isSuccess)
+    {
+        _error = null;
+
+        var (isSuccessOp, errorMessage, successes, failures) = await AddDeathSaveService.ExecuteAsync(new AddDeathSaveCommand(ParticipantId, isSuccess));
+
+        if (!isSuccessOp)
+        {
+            _error = errorMessage;
+            return;
+        }
+
+        if (successes.HasValue)
+            _setSuccesses = successes.Value;
+
+        if (failures.HasValue)
+            _setFailures = failures.Value;
+
+        await OnSaved.InvokeAsync();
+    }
+
+}

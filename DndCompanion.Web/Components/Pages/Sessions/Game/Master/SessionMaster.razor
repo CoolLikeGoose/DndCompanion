@@ -26,14 +26,52 @@ else
                 <div class="col-6">
                     <div class="card p-3 master-card @GetCardClass()"
                          @onclick="() => OnCardClick(participant)">
-                        <div class="fw-semibold">@participant.Character!.Name</div>
-                        <div class="small text-muted">@participant.DisplayName</div>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="fw-semibold">@participant.Character!.Name</div>
+                                <div class="small text-muted">@participant.DisplayName</div>
+                            </div>
+                            <div>
+                                @if (hp is not null && hp.CurrentValue <= 0){
+                                    var successes = participant.Character.DeathSavesSuccesses;
+                                    var failures = participant.Character.DeathSavesFailures;
+                                    
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="text-muted" style="width: 60px;">Success</span>
+                                        @for (int i = 0; i < 3; i++)
+                                        {
+                                            var filled = i < successes;
+                                            <span style="
+                                                width: 18px;
+                                                height: 18px;
+                                                border-radius: 50%;
+                                                display: inline-block;
+                                                border: 2px solid #198754;
+                                                background: @(filled ? "#198754" : "transparent");"></span>
+                                        }
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="text-muted" style="width: 60px;">Failure</span>
+                                        @for (int i = 0; i < 3; i++)
+                                        {
+                                            var filled = i < failures;
+                                            <span style="
+                                                width: 18px;
+                                                height: 18px;
+                                                border-radius: 50%;
+                                                display: inline-block;
+                                                border: 2px solid #dc3545;
+                                                background: @(filled ? "#dc3545" : "transparent");"></span>
+                                        }
+                                    </div>}
+                            </div>
+                        </div>
                         @if (hp is not null)
                         {
                             var percent = hp.MaxValue > 0 ? (double)hp.CurrentValue / hp.MaxValue * 100 : 0;
                             var hue = (int)(percent * 1.2);
                             var barStyle = $"width: {percent:F0}%; background-color: hsl({hue}, 80%, 45%);";
-                            
+
                             <div class="mt-2">
                                 <div class="d-flex justify-content-between small text-muted mb-1">
                                     <span>HP</span>
@@ -55,25 +93,28 @@ else
             }
         </div>
     </div>
-    
+
     <div style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1000;">
         <div class="bg-primary p-1 rounded-3 shadow">
             <p class="text-center text-white mb-0">
                 Tools
             </p>
             <div class="bg-white rounded-3 p-2">
-                <button class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.None ? "tool-neutral" : "")"
-                        @onclick="() => SelectTool(MasterTool.None)">
+                <button
+                    class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.None ? "tool-neutral" : "")"
+                    @onclick="() => SelectTool(MasterTool.None)">
                     <i class="bi bi-slash-circle tool-neutral-icon"></i>
                     No tool
                 </button>
-                <button class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.DamageHeal ? "tool-damage" : "")"
-                        @onclick="() => SelectTool(MasterTool.DamageHeal)">
+                <button
+                    class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.DamageHeal ? "tool-damage" : "")"
+                    @onclick="() => SelectTool(MasterTool.DamageHeal)">
                     <i class="bi bi-lightning-fill tool-damage-icon"></i>
                     Damage/Heal
                 </button>
-                <button class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.GiveItem ? "tool-give" : "")"
-                        @onclick="() => SelectTool(MasterTool.GiveItem)">
+                <button
+                    class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.GiveItem ? "tool-give" : "")"
+                    @onclick="() => SelectTool(MasterTool.GiveItem)">
                     <i class="bi bi-bag-plus-fill tool-give-icon"></i>
                     Give Item
                 </button>
