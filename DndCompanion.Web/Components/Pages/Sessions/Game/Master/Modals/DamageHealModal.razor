@@ -66,7 +66,7 @@
 
 @code {
     [Parameter] public Guid SessionId { get; set; }
-    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback<SessionEvent> OnSaved { get; set; }
 
     private ElementReference _inputRef;
 
@@ -107,7 +107,7 @@
     {
         if (string.IsNullOrWhiteSpace(input) || input.Length > 50) return 0;
         if (!System.Text.RegularExpressions.Regex.IsMatch(input, @"^[\d\+\-\*\/\s\(\)]+$")) return 0;
-        
+
         try
         {
             var result = new System.Data.DataTable().Compute(input, null);
@@ -138,7 +138,9 @@
 
         _modalOpen = false;
 
-        await OnSaved.InvokeAsync();
+        await OnSaved.InvokeAsync(
+            new SessionEvent(SessionEventType.ResourcesUpdated, SessionId, _targetParticipant)
+        );
     }
 
 }

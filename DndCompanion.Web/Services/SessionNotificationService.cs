@@ -2,23 +2,23 @@
 
 public sealed class SessionNotificationService
 {
-    private readonly Dictionary<Guid, List<Func<Task>>> _handlers = new();
+    private readonly Dictionary<Guid, List<Func<SessionEvent, Task>>> _handlers = new();
     private readonly object _lock = new();
     
-    public void Subscribe(Guid sessionId, Func<Task> handler)
+    public void Subscribe(Guid sessionId, Func<SessionEvent, Task> handler)
     {
         lock (_lock)
         {
             if (!_handlers.ContainsKey(sessionId))
             {
-                _handlers[sessionId] = new List<Func<Task>>();
+                _handlers[sessionId] = new List<Func<SessionEvent, Task>>();
             }
 
             _handlers[sessionId].Add(handler);
         }
     }
     
-    public void Unsubscribe(Guid sessionId, Func<Task> handler)
+    public void Unsubscribe(Guid sessionId, Func<SessionEvent, Task> handler)
     {
         lock (_lock)
         {
@@ -29,12 +29,12 @@ public sealed class SessionNotificationService
         }
     }
     
-    public async Task NotifyAsync(Guid sessionId)
+    public async Task NotifyAsync(SessionEvent sessionEvent)
     {
-        List<Func<Task>> snapshot;
+        List<Func<SessionEvent, Task>> snapshot;
         lock (_lock)
         {
-            if (!_handlers.TryGetValue(sessionId, out var handlers))
+            if (!_handlers.TryGetValue(sessionEvent.SessionId, out var handlers))
             {
                 return;
             }   
@@ -45,7 +45,7 @@ public sealed class SessionNotificationService
         {
             try
             {
-                await handler();
+                await handler(sessionEvent);
             }
             catch
             {

@@ -45,7 +45,8 @@
 }
 
 @code {
-    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public Guid SessionId { get; set; }
+    [Parameter] public EventCallback<SessionEvent> OnSaved { get; set; }
 
     private Guid? _targetParticipant;
     private bool _isBusy;
@@ -101,7 +102,9 @@
         _isBusy = false;
         CloseModal();
 
-        await OnSaved.InvokeAsync();
+        await OnSaved.InvokeAsync(
+            new SessionEvent(SessionEventType.ItemsUpdated, SessionId, _targetParticipant.Value)
+        );
     }
 
 }

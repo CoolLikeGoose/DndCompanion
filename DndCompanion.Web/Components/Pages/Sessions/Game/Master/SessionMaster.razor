@@ -32,10 +32,11 @@ else
                                 <div class="small text-muted">@participant.DisplayName</div>
                             </div>
                             <div>
-                                @if (hp is not null && hp.CurrentValue <= 0){
+                                @if (hp is not null && hp.CurrentValue <= 0)
+                                {
                                     var successes = participant.Character.DeathSavesSuccesses;
                                     var failures = participant.Character.DeathSavesFailures;
-                                    
+
                                     <div class="d-flex align-items-center gap-2 mb-1">
                                         <span class="text-muted" style="width: 60px;">Success</span>
                                         @for (int i = 0; i < 3; i++)
@@ -63,7 +64,8 @@ else
                                                 border: 2px solid #dc3545;
                                                 background: @(filled ? "#dc3545" : "transparent");"></span>
                                         }
-                                    </div>}
+                                    </div>
+                                }
                             </div>
                         </div>
                         @if (hp is not null)
@@ -125,7 +127,7 @@ else
 
 <DamageHealModal @ref="_damageHealModal" SessionId="SessionId" OnSaved="HandleSaved"/>
 
-<GiveItemModal @ref="_giveItemModal" OnSaved="HandleSaved"/>
+<GiveItemModal @ref="_giveItemModal" SessionId="@SessionId" OnSaved="HandleSaved"/>
 
 <SessionNavBar SessionId="@SessionId" ParticipantId="@ParticipantId" Role="@SessionRole.Master"/>
 
@@ -150,8 +152,11 @@ else
         _session = await repo.FindByIdWithParticipantsAndCharactersAsync(SessionId);
     }
 
-    private async Task OnSessionUpdated()
+    private async Task OnSessionUpdated(SessionEvent sessionEvent)
     {
+        if (sessionEvent.Type == SessionEventType.ItemsUpdated)
+            return;
+
         await LoadSessionAsync();
         await InvokeAsync(StateHasChanged);
     }
@@ -197,10 +202,10 @@ else
         }
     }
 
-    private async Task HandleSaved()
+    private async Task HandleSaved(SessionEvent sessionEvent)
     {
         await LoadSessionAsync();
-        await SessionNotificationService.NotifyAsync(SessionId);
+        await SessionNotificationService.NotifyAsync(sessionEvent);
     }
 
     public void Dispose()

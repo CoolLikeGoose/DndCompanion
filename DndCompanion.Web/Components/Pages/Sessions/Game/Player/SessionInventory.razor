@@ -121,8 +121,13 @@
         SessionNotificationService.Subscribe(SessionId, OnSessionUpdated);
     }
 
-    private async Task OnSessionUpdated()
+    private async Task OnSessionUpdated(SessionEvent sessionEvent)
     {
+        if (sessionEvent.ParticipantId != ParticipantId)
+            return;
+        if (sessionEvent.Type != SessionEventType.ItemsUpdated)
+            return;
+
         await ReloadAsync();
         await InvokeAsync(StateHasChanged);
     }
