@@ -73,7 +73,7 @@
                                     Disabled="_isBusy"
                                     OnEditClick='() => OpenEditorModal(ResourceType.HitDice, StaticResourceNames.HitDice)'/>
 
-                                @if (hp.CurrentValue <= 0)
+                                @if (hp is not null && hp.CurrentValue <= 0)
                                 {
                                     var successfulDeathThrows = _participant?.Character?.DeathSavesSuccesses ?? 0;
                                     var failedDeathThrows = _participant?.Character?.DeathSavesFailures ?? 0;
@@ -130,7 +130,7 @@
                                     <h5 class="mb-0">Abilities</h5>
                                 </div>
 
-                                @foreach (var group in _participant.Character.Resources
+                                @foreach (var group in _participant!.Character!.Resources
                                                   .Where(r => r.Type == ResourceType.AbilitySlot)
                                                   .GroupBy(r => r.Group ?? "Abilities")
                                                   .OrderBy(g => g.Key))
