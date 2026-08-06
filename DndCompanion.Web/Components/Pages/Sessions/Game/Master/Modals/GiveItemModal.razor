@@ -49,6 +49,7 @@
     [Parameter] public EventCallback<SessionEvent> OnSaved { get; set; }
 
     private Guid? _targetParticipant;
+    private string _targetCharacterName = string.Empty;
     private bool _isBusy;
     private string? _error;
 
@@ -58,9 +59,10 @@
     private string? _formSourceUrl;
     private int _formQuantity;
 
-    public void Open(Guid participantId)
+    public void Open(Guid participantId, string characterName)
     {
         _targetParticipant = participantId;
+        _targetCharacterName = characterName;
         _formName = string.Empty;
         _formDescription = null;
         _formSourceUrl = null;
@@ -103,7 +105,8 @@
         CloseModal();
 
         await OnSaved.InvokeAsync(
-            new SessionEvent(SessionEventType.ItemsUpdated, SessionId, _targetParticipant.Value)
+            new SessionEvent(SessionEventType.ItemsUpdated, SessionId, _targetParticipant.Value,
+                new ItemLogEntry(DateTime.UtcNow, _targetCharacterName, _formName))
         );
     }
 

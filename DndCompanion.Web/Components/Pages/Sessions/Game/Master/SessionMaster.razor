@@ -192,10 +192,10 @@ else
         {
             case MasterTool.DamageHeal:
                 var hp = participant.Character!.Resources.FirstOrDefault(r => r.Type == ResourceType.HitPoints);
-                _damageHealModal.Open(participant.Id, hp?.CurrentValue ?? 0, hp?.MaxValue ?? 0);
+                _damageHealModal.Open(participant.Id, participant.Character!.Name, hp?.CurrentValue ?? 0, hp?.MaxValue ?? 0);
                 break;
             case MasterTool.GiveItem:
-                _giveItemModal.Open(participant.Id);
+                _giveItemModal.Open(participant.Id, participant.Character!.Name);
                 break;
             default:
                 break;

@@ -1,0 +1,69 @@
+﻿@page "/sessions/{SessionId:guid}/battlelog"
+@using Domain.Enums
+@using Web.Components.Shared
+
+@inject SessionNotificationService SessionNotificationService
+
+@implements IDisposable
+
+<div class="container py-3 pb-5">
+    <h5 class="text-muted mb-3">Battle Log</h5>
+    @if (!_log.Any())
+    {
+        <p class="text-muted">No log entries yet.</p>
+    }
+    else
+    {
+        @foreach (var entry in _log.AsEnumerable().Reverse())
+        {
+            <div class="d-flex gap-2 small border-bottom py-1">
+                <span class="text-muted">@entry.Timestamp.ToString("HH:mm")</span>
+                <span>@RenderEntry(entry)</span>
+            </div>
+        }
+    }
+</div>
+
+<SessionNavBar
+    SessionId="SessionId"
+    ParticipantId="ParticipantId"/>
+
+@code {
+    [Parameter] public Guid SessionId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "participantId")]
+    public Guid ParticipantId { get; set; }
+
+    private IReadOnlyList<BattleLogEntry> _log = Array.Empty<BattleLogEntry>();
+
+    protected override void OnInitialized()
+    {
+        _log = SessionNotificationService.GetLog(SessionId);
+        SessionNotificationService.Subscribe(SessionId, OnLogUpdated);
+    }
+
+    private Task OnLogUpdated(SessionEvent sessionEvent)
+    {
+        _log = SessionNotificationService.GetLog(SessionId);
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private string RenderEntry(BattleLogEntry entry) => entry switch
+    {
+        DamageLogEntry e => e.IsHeal
+            ? $"{e.TargetName} healed for {e.Amount} HP"
+            : $"{e.TargetName} took {e.Amount} damage",
+        ItemLogEntry e =>
+            $"{e.TargetName} received {e.ItemName ?? "an item"}",
+        DeathThrowLogEntry e => e.IsSuccess
+            ? $"{e.TargetName} succeeded on a death saving throw"
+            : $"{e.TargetName} failed a death saving throw",
+        _ => "Unknown entry"
+    };
+
+    public void Dispose()
+    {
+        SessionNotificationService.Unsubscribe(SessionId, OnLogUpdated);
+    }
+
+}

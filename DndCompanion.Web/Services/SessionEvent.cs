@@ -3,4 +3,5 @@
 public sealed record SessionEvent( 
     SessionEventType Type,
     Guid SessionId,
-    Guid? ParticipantId = null);
+    Guid? ParticipantId = null,
+    BattleLogEntry? LogEntry = null);

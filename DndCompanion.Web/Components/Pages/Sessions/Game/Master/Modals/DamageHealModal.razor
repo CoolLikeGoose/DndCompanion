@@ -73,16 +73,18 @@
     private bool _modalOpen = false;
 
     private Guid _targetParticipant;
+    private string _targetCharacterName = string.Empty;
     private int _outValue = 0;
     private string? _valueExpression;
     private int _currentHp = 0;
     private int _maxHp = 0;
 
-    public void Open(Guid participantId, int currentHp, int maxHp)
+    public void Open(Guid participantId, string characterName, int currentHp, int maxHp)
     {
         _targetParticipant = participantId;
         _outValue = 0;
         _valueExpression = null;
+        _targetCharacterName = characterName;
         _modalOpen = true;
         _currentHp = currentHp;
         _maxHp = maxHp;
@@ -139,7 +141,8 @@
         _modalOpen = false;
 
         await OnSaved.InvokeAsync(
-            new SessionEvent(SessionEventType.ResourcesUpdated, SessionId, _targetParticipant)
+            new SessionEvent(SessionEventType.ResourcesUpdated, SessionId, _targetParticipant, 
+                new DamageLogEntry(DateTime.UtcNow, _targetCharacterName, _outValue, isHealing))
         );
     }
 

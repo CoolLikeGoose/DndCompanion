@@ -304,11 +304,12 @@
         _addThrowModal.Open(_participant?.Character?.DeathSavesSuccesses ?? 0, _participant?.Character?.DeathSavesFailures ?? 0);
     }
 
-    private async Task HandleAddThrow()
+    private async Task HandleAddThrow(bool isSuccess)
     {
         await ReloadParticipantAsync();
         await SessionNotificationService.NotifyAsync(
-            new SessionEvent(SessionEventType.DeathThrowsUpdated, SessionId, ParticipantId)
+            new SessionEvent(SessionEventType.DeathThrowsUpdated, SessionId, ParticipantId,
+                new DeathThrowLogEntry(DateTime.UtcNow, _participant!.Character!.Name, isSuccess))
         );
     }
 
