@@ -1,7 +1,6 @@
 ﻿@page "/sessions/{SessionId:guid}/character"
 @using DndCompanion.Application.Abstractions.Persistence
 @using DndCompanion.Application.Features.Characters.Resources.AddAbilitySlot
-@using DndCompanion.Application.Features.Characters.Resources.AddDeathSave
 @using DndCompanion.Application.Features.Characters.Resources.ApplyRest
 @using Web.Components.Shared
 @using Domain.Entities
@@ -34,7 +33,21 @@
                         <span class="badge bg-secondary">@_participant.Role</span>
                     </div>
                     <div class="ms-auto">
-                        <button class="btn btn-primary" @onclick="ApplyLongRest" disabled="@_isBusy">Long Rest</button>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" @onclick="() => ApplyRest(true)" disabled="@_isBusy">Long Rest</button>
+                            <button class="btn btn-primary dropdown-toggle"
+                                    @onclick="() => _restDropdownOpen = !_restDropdownOpen"
+                                    @onblur="() => _restDropdownOpen = false">
+                            </button>
+                            
+                            @if (_restDropdownOpen)
+                            {
+                                <div class="dropdown-menu show w-100"
+                                     style="position:absolute; top: 100%; left: 0;">
+                                    <button class="dropdown-item" @onclick="() => ApplyRest(false)">Short Rest</button>
+                                </div>
+                            }
+                        </div>
                         <button class="btn btn-primary" @onclick="() => _globalEdit = !_globalEdit">
                             @(_globalEdit ? "Cancel" : "Edit Resources")
                         </button>
@@ -313,13 +326,17 @@
         );
     }
 
-    private async Task ApplyLongRest()
+    // Rest options 
+    private bool _restDropdownOpen = false;
+    
+    
+    private async Task ApplyRest(bool isLong = true)
     {
         _isBusy = true;
         _resourceError = null;
 
         var result = await ApplyRestService.ExecuteAsync(
-            new ApplyRestCommand(ParticipantId, RecoveryType.LongRest, true));
+            new ApplyRestCommand(ParticipantId, isLong ? RecoveryType.LongRest : RecoveryType.ShortRest, true));
 
         _isBusy = false;
 
@@ -328,6 +345,8 @@
             _resourceError = result.ErrorMessage;
             return;
         }
+        
+        _restDropdownOpen = false;
 
         await ReloadParticipantAsync();
         await SessionNotificationService.NotifyAsync(
