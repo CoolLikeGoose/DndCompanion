@@ -1,8 +1,10 @@
 ﻿@page "/sessions/{SessionId:guid}/battlelog"
+@using DndCompanion.Application.Abstractions.Persistence
 @using Domain.Enums
 @using Web.Components.Shared
 
 @inject SessionNotificationService SessionNotificationService
+@inject ISessionRepository SessionRepository
 
 @implements IDisposable
 
@@ -26,7 +28,8 @@
 
 <SessionNavBar
     SessionId="SessionId"
-    ParticipantId="ParticipantId"/>
+    ParticipantId="ParticipantId"
+    Role="@_role"/>
 
 @code {
     [Parameter] public Guid SessionId { get; set; }
@@ -35,9 +38,17 @@
     public Guid ParticipantId { get; set; }
 
     private IReadOnlyList<BattleLogEntry> _log = Array.Empty<BattleLogEntry>();
+    private SessionRole _role = SessionRole.Player;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        var participant = await SessionRepository.FindParticipantByIdAsync(ParticipantId);
+        if (participant is null || participant.SessionId != SessionId)
+        {
+            return;
+        }
+        _role = participant.Role;
+        
         _log = SessionNotificationService.GetLog(SessionId);
         SessionNotificationService.Subscribe(SessionId, OnLogUpdated);
     }
