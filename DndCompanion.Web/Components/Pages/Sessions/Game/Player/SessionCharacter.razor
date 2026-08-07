@@ -37,7 +37,7 @@
                             <button class="btn btn-primary" @onclick="() => ApplyRest(true)" disabled="@_isBusy">Long Rest</button>
                             <button class="btn btn-primary dropdown-toggle"
                                     @onclick="() => _restDropdownOpen = !_restDropdownOpen"
-                                    @onblur="() => _restDropdownOpen = false">
+                                    @onblur="async () => { await Task.Delay(100); _restDropdownOpen = false; }">
                             </button>
                             
                             @if (_restDropdownOpen)
@@ -345,7 +345,8 @@
             _resourceError = result.ErrorMessage;
             return;
         }
-        
+
+        Console.WriteLine($"Chill broo......................................................................................{isLong.ToString()}");
         _restDropdownOpen = false;
 
         await ReloadParticipantAsync();
