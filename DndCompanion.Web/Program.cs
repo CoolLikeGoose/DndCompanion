@@ -10,6 +10,8 @@ using DndCompanion.Application.Features.Characters.Items.UpdateItem;
 using DndCompanion.Application.Features.Characters.Resources.AddAbilitySlot;
 using DndCompanion.Application.Features.Characters.Resources.AddDeathSave;
 using DndCompanion.Application.Features.Characters.Resources.ApplyRest;
+using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestParty;
+using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestSingle;
 using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource;
 using DndCompanion.Application.Features.Characters.Resources.SetCharacterResource;
 using DndCompanion.Application.Features.Characters.Resources.SetCharacterResourceMax;
@@ -81,7 +83,8 @@ builder.Services.AddScoped<ChangeCharacterResourceService>();
 builder.Services.AddScoped<SetCharacterResourceService>();
 builder.Services.AddScoped<SetCharacterResourceMaxService>();
 builder.Services.AddScoped<AddAbilitySlotService>();
-builder.Services.AddScoped<ApplyRestService>();
+builder.Services.AddScoped<ApplyRestSingleService>();
+builder.Services.AddScoped<ApplyRestPartyService>();
 
 
 var app = builder.Build();

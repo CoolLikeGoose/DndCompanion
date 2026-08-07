@@ -10,3 +10,6 @@ public sealed record ItemLogEntry(DateTime Timestamp, string TargetName, string?
 
 public sealed record DeathThrowLogEntry(DateTime Timestamp, string TargetName, bool IsSuccess)
     : BattleLogEntry(Timestamp);
+    
+public sealed record PartyRestLogEntry(DateTime Timestamp, bool IsLongRest)
+    : BattleLogEntry(Timestamp);

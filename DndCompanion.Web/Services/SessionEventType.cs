@@ -6,5 +6,6 @@ public enum SessionEventType
     ItemsUpdated,
     InfoUpdated,
     DeathThrowsUpdated,
-    SessionUpdated
+    SessionUpdated,
+    RestTaken
 }

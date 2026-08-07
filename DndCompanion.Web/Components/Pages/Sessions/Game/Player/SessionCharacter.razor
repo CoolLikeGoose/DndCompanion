@@ -2,6 +2,7 @@
 @using DndCompanion.Application.Abstractions.Persistence
 @using DndCompanion.Application.Features.Characters.Resources.AddAbilitySlot
 @using DndCompanion.Application.Features.Characters.Resources.ApplyRest
+@using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestSingle
 @using Web.Components.Shared
 @using Domain.Entities
 @using Web.Components.Pages.Sessions.Game.Player.Modals
@@ -14,7 +15,7 @@
 @inject IServiceScopeFactory ScopeFactory
 
 @inject AddAbilitySlotService AddAbilitySlotService
-@inject ApplyRestService ApplyRestService
+@inject ApplyRestSingleService ApplyRestSingleService
 
 @implements IDisposable
 
@@ -235,9 +236,10 @@
 
     private async Task OnSessionUpdated(SessionEvent sessionEvent)
     {
-        if (sessionEvent.ParticipantId != ParticipantId)
+        if (sessionEvent.ParticipantId.HasValue && sessionEvent.ParticipantId != ParticipantId)
             return;
-        if (sessionEvent.Type != SessionEventType.ResourcesUpdated)
+        if (sessionEvent.Type != SessionEventType.ResourcesUpdated &&
+            sessionEvent.Type != SessionEventType.RestTaken)
             return;
 
         using var scope = ScopeFactory.CreateScope();
@@ -335,8 +337,8 @@
         _isBusy = true;
         _resourceError = null;
 
-        var result = await ApplyRestService.ExecuteAsync(
-            new ApplyRestCommand(ParticipantId, isLong ? RecoveryType.LongRest : RecoveryType.ShortRest, true));
+        var result = await ApplyRestSingleService.ExecuteAsync(
+            new ApplyRestSingleCommand(ParticipantId, isLong ? RecoveryType.LongRest : RecoveryType.ShortRest, true));
 
         _isBusy = false;
 
@@ -346,12 +348,11 @@
             return;
         }
 
-        Console.WriteLine($"Chill broo......................................................................................{isLong.ToString()}");
         _restDropdownOpen = false;
 
         await ReloadParticipantAsync();
         await SessionNotificationService.NotifyAsync(
-            new SessionEvent(SessionEventType.ResourcesUpdated, SessionId, ParticipantId)
+            new SessionEvent(SessionEventType.RestTaken, SessionId, ParticipantId)
         );
     }
 

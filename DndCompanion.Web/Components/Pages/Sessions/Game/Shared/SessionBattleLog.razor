@@ -47,8 +47,9 @@
         {
             return;
         }
+
         _role = participant.Role;
-        
+
         _log = SessionNotificationService.GetLog(SessionId);
         SessionNotificationService.Subscribe(SessionId, OnLogUpdated);
     }
@@ -69,6 +70,9 @@
         DeathThrowLogEntry e => e.IsSuccess
             ? $"{e.TargetName} succeeded on a death saving throw"
             : $"{e.TargetName} failed a death saving throw",
+        PartyRestLogEntry e => e.IsLongRest
+            ? "Party took a long rest"
+            : "Party took a short rest",
         _ => "Unknown entry"
     };
 

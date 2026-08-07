@@ -1,5 +1,6 @@
 ﻿@page "/sessions/{SessionId:guid}/master"
 @using DndCompanion.Application.Abstractions.Persistence
+@using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestParty
 @using Domain.Entities
 @using Domain.Enums
 @using Web.Components.Shared
@@ -18,7 +19,34 @@
 else
 {
     <div class="container py-3">
-        <h3 class="mb-2">Characters</h3>
+        @if (_resourceError is not null)
+        {
+            <div class="alert alert-danger" role="alert">
+                @_resourceError
+            </div>
+        }
+        <div class="d-flex justify-content-between mb-3">
+            <h3>Characters</h3>
+            <div class="btn-group">
+                <button class="btn btn-primary"
+                        @onclick="() => ApplyRest(true)"
+                        disabled="@_isBusy">
+                    Long Rest
+                </button>
+                <button class="btn btn-primary dropdown-toggle"
+                        @onclick="() => _restDropdownOpen = !_restDropdownOpen"
+                        @onblur="async () => { await Task.Delay(100); _restDropdownOpen = false; }">
+                </button>
+
+                @if (_restDropdownOpen)
+                {
+                    <div class="dropdown-menu show w-100"
+                         style="position:absolute; top: 100%; left: 0;">
+                        <button class="dropdown-item" @onclick="() => ApplyRest(false)">Short Rest</button>
+                    </div>
+                }
+            </div>
+        </div>
         <div class="row g-2">
             @foreach (var participant in _session.Participants.Where(p => p.Role == SessionRole.Player && p.Character is not null))
             {
@@ -137,6 +165,8 @@ else
     [SupplyParameterFromQuery(Name = "participantId")]
     public Guid ParticipantId { get; set; }
 
+    private bool _isBusy = false;
+    private string? _resourceError = null;
     private Session? _session;
 
     protected override async Task OnInitializedAsync()
@@ -206,6 +236,39 @@ else
     {
         await LoadSessionAsync();
         await SessionNotificationService.NotifyAsync(sessionEvent);
+    }
+
+    // Rest options
+    private bool _restDropdownOpen = false;
+
+    private async Task ApplyRest(bool isLong = true)
+    {
+        _isBusy = true;
+        _resourceError = null;
+
+        // Using scope to resolve an issue with the participant's HP not being updated in current scopedDbContext =>
+        // user can't click the rest button more than once (I spent 2 hours of my life)
+        using var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<ApplyRestPartyService>();
+
+        var result = await service.ExecuteAsync(
+            new ApplyRestPartyCommand(SessionId, isLong ? RecoveryType.LongRest : RecoveryType.ShortRest, true));
+
+        _isBusy = false;
+
+        if (!result.IsSuccess)
+        {
+            _resourceError = result.ErrorMessage;
+            return;
+        }
+
+        _restDropdownOpen = false;
+
+        var sessionEvent = new SessionEvent(SessionEventType.RestTaken, SessionId, null,
+            new PartyRestLogEntry(DateTime.UtcNow, isLong));
+
+        await SessionNotificationService.NotifyAsync(sessionEvent);
+        await OnSessionUpdated(sessionEvent);
     }
 
     public void Dispose()
