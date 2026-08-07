@@ -1,8 +1,8 @@
 ﻿@page "/sessions/{SessionId:guid}/character"
 @using DndCompanion.Application.Abstractions.Persistence
 @using DndCompanion.Application.Features.Characters.Resources.AddAbilitySlot
-@using DndCompanion.Application.Features.Characters.Resources.ApplyRest
 @using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestSingle
+@using DndCompanion.Application.Features.Characters.Resources.RemoveAbilitySlot
 @using Web.Components.Shared
 @using Domain.Entities
 @using Web.Components.Pages.Sessions.Game.Player.Modals
@@ -15,6 +15,7 @@
 @inject IServiceScopeFactory ScopeFactory
 
 @inject AddAbilitySlotService AddAbilitySlotService
+@inject RemoveAbilitySlotService RemoveAbilitySlotService
 @inject ApplyRestSingleService ApplyRestSingleService
 
 @implements IDisposable
@@ -160,7 +161,8 @@
                                                 Resource="resource"
                                                 Disabled="_isBusy"
                                                 IsGlobalEditMode="_globalEdit"
-                                                OnEditClick='() => OpenEditorModal(ResourceType.AbilitySlot, resource.Name)'/>
+                                                OnEditClick='() => OpenEditorModal(ResourceType.AbilitySlot, resource.Name)'
+                                                OnRemoveClick='() => OnRemoveAbility(resource.Name)'/>
                                         }
                                         @if (_globalEdit)
                                         {
@@ -272,6 +274,18 @@
             _resourceError = result.ErrorMessage;
             return;
         }
+
+        await ReloadParticipantAsync();
+    }
+    
+    private async Task OnRemoveAbility(string name)
+    {
+        _isBusy = true;
+        var result = await RemoveAbilitySlotService.ExecuteAsync(
+            new RemoveAbilitySlotCommand(ParticipantId, name));
+        _isBusy = false;
+
+        if (!result.IsSuccess) { _resourceError = result.ErrorMessage; return; }
 
         await ReloadParticipantAsync();
     }

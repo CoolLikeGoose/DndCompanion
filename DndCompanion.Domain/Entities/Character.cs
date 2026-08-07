@@ -124,6 +124,15 @@ public class Character
         return resource;
     }
 
+    public void RemoveResource(ResourceType type, string name)
+    {
+        var resource = _resources.FirstOrDefault(x => x.MatchesType(type, name));
+        if (resource is null)
+            throw new ArgumentException(
+                $"Resource of type {type} with name {name} not found for this character.");
+        _resources.Remove(resource);
+    }
+
     // Items   
     public Item AddItem(
         string name,

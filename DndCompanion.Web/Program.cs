@@ -13,6 +13,7 @@ using DndCompanion.Application.Features.Characters.Resources.ApplyRest;
 using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestParty;
 using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestSingle;
 using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource;
+using DndCompanion.Application.Features.Characters.Resources.RemoveAbilitySlot;
 using DndCompanion.Application.Features.Characters.Resources.SetCharacterResource;
 using DndCompanion.Application.Features.Characters.Resources.SetCharacterResourceMax;
 using DndCompanion.Application.Features.Characters.SelectCharacter;
@@ -83,6 +84,7 @@ builder.Services.AddScoped<ChangeCharacterResourceService>();
 builder.Services.AddScoped<SetCharacterResourceService>();
 builder.Services.AddScoped<SetCharacterResourceMaxService>();
 builder.Services.AddScoped<AddAbilitySlotService>();
+builder.Services.AddScoped<RemoveAbilitySlotService>();
 builder.Services.AddScoped<ApplyRestSingleService>();
 builder.Services.AddScoped<ApplyRestPartyService>();
 
