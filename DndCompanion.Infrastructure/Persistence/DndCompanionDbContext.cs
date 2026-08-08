@@ -18,6 +18,7 @@ public class DndCompanionDbContext : DbContext
     public DbSet<Item> Items => Set<Item>();
     public DbSet<CharacterInfo> CharacterInfos => Set<CharacterInfo>();
     public DbSet<CharacterStats> CharacterStats => Set<CharacterStats>();
+    public DbSet<Monster> Monsters => Set<Monster>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

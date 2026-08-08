@@ -157,6 +157,28 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Monsters",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SessionId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    CurrentHp = table.Column<int>(type: "INTEGER", nullable: false),
+                    MaxHp = table.Column<int>(type: "INTEGER", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Monsters", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Monsters_Sessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "Sessions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SessionParticipants",
                 columns: table => new
                 {
@@ -194,6 +216,12 @@ namespace Infrastructure.Migrations
                 name: "IX_Items_CharacterId",
                 table: "Items",
                 column: "CharacterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Monsters_SessionId_Name",
+                table: "Monsters",
+                columns: new[] { "SessionId", "Name" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Resources_CharacterId",
@@ -234,6 +262,9 @@ namespace Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Items");
+
+            migrationBuilder.DropTable(
+                name: "Monsters");
 
             migrationBuilder.DropTable(
                 name: "Resources");

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DndCompanionDbContext))]
-    [Migration("20260805014915_InitialCreate")]
+    [Migration("20260808100324_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -156,6 +156,36 @@ namespace Infrastructure.Migrations
                     b.HasIndex("CharacterId");
 
                     b.ToTable("Items", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Monster", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CurrentHp")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MaxHp")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Monsters", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Resource", b =>
@@ -311,6 +341,15 @@ namespace Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Domain.Entities.Monster", b =>
+                {
+                    b.HasOne("Domain.Entities.Session", null)
+                        .WithMany("Monsters")
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Domain.Entities.Resource", b =>
                 {
                     b.HasOne("Domain.Entities.Character", null)
@@ -351,6 +390,8 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Session", b =>
                 {
+                    b.Navigation("Monsters");
+
                     b.Navigation("Participants");
                 });
 #pragma warning restore 612, 618

@@ -18,6 +18,9 @@ public class Session
 
     public ICollection<SessionParticipant> Participants { get; private set; } = new List<SessionParticipant>();
     
+    private readonly List<Monster> _monsters = new();
+    public IReadOnlyCollection<Monster> Monsters => _monsters.AsReadOnly();
+    
     public static Session Create(Guid? masterUserId, string masterDisplayName, PinCode? pinCode)
     {
         if (string.IsNullOrWhiteSpace(masterDisplayName))
@@ -56,5 +59,20 @@ public class Session
         Participants.Add(participant);
         
         return participant;
+    }
+    
+    public Monster AddMonster(string name, int maxHp, string? description = null)
+    {
+        var monster = Monster.Create(Id, name, maxHp, description);
+        _monsters.Add(monster);
+        return monster;
+    }
+
+    public void RemoveMonster(Guid monsterId)
+    {
+        var monster = _monsters.FirstOrDefault(x => x.Id == monsterId);
+        if (monster is null)
+            throw new ArgumentException($"Monster with id {monsterId} not found for this session.", nameof(monsterId));
+        _monsters.Remove(monster);
     }
 }
