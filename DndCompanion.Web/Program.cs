@@ -231,7 +231,14 @@ app.MapGet("/sessions/resume", async (
     if (!Guid.TryParse(sessionIdRaw, out var sessionId) || !Guid.TryParse(participantIdRaw, out var participantId))
     {
         ClearLastSessionCookies(httpContext);
-        return Results.Redirect("/");
+        return Results.Redirect("/?error=session-not-found");
+    }
+    
+    var existingParticipant = await sessionRepository.FindParticipantByIdAsync(participantId);
+    if (existingParticipant is null || existingParticipant.SessionId != sessionId)
+    {
+        ClearLastSessionCookies(httpContext);
+        return Results.Redirect("/?error=session-expired");
     }
 
     return Results.Redirect($"/sessions/{sessionId}?participantId={participantId}");
