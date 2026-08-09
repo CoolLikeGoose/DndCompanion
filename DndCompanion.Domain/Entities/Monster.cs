@@ -39,19 +39,29 @@ public class Monster
         return monster;
     }
 
-    public void ChangeHp(int delta)
+    public void Update(
+        string? name = null, 
+        int? maxHp = null, 
+        int? currentHp = null, 
+        string? description = null)
     {
-        CurrentHp = Math.Clamp(CurrentHp + delta, 0, MaxHp);
-    }
-
-    public void SetMaxHp(int maxHp)
-    {
-        if (maxHp <= 0)
-        {
+        if (maxHp.HasValue && maxHp <= 0)
             throw new ArgumentException("Max HP must be greater than 0", nameof(maxHp));
+        
+        if (name is not null)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Name cannot be empty string", nameof(name));
+            
+            var normalizedName = name.Trim();
+            if (normalizedName.Length > 100)
+                throw new ArgumentException("Name is too long(max 100 chars)", nameof(name));
+            
+            Name = normalizedName;
         }
-
-        MaxHp = maxHp;
-        CurrentHp = Math.Clamp(CurrentHp, 0, MaxHp);
+        
+        MaxHp = maxHp.HasValue ? maxHp.Value : MaxHp;
+        CurrentHp = currentHp.HasValue ? Math.Clamp(currentHp.Value, 0, MaxHp) : Math.Min(CurrentHp, MaxHp);
+        Description = description ?? Description;
     }
 }

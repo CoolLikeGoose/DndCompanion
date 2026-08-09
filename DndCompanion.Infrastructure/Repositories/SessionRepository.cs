@@ -29,7 +29,13 @@ public sealed class SessionRepository : ISessionRepository
             .FirstOrDefaultAsync(x => x.InviteCode == normalized, cancellationToken);
     }
 
-    public async Task<Session?> FindByIdAsync(Guid sessionId, CancellationToken cancellationToken = default)
+    public Task<Session?> FindByIdAsync(Guid sessionId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Sessions
+            .FirstOrDefaultAsync(x => x.Id == sessionId, cancellationToken);
+    }
+
+    public async Task<Session?> FindByIdWithParticipantsAsync(Guid sessionId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Sessions
             .Include(x => x.Participants)
@@ -43,6 +49,19 @@ public sealed class SessionRepository : ISessionRepository
             .ThenInclude(x => x.Character)
             .ThenInclude(x => x!.Resources)
             .FirstOrDefaultAsync(x => x.Id == sessionId, cancellationToken);
+    }
+
+    public Task<Session?> FindByIdWithMonstersAsync(Guid sessionId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Sessions
+            .Include(x => x.Monsters)
+            .FirstOrDefaultAsync(x => x.Id == sessionId, cancellationToken);
+    }
+
+    public Task<Monster?> FindMonsterByIdAsync(Guid monsterId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Monsters
+            .FirstOrDefaultAsync(x => x.Id == monsterId, cancellationToken);
     }
 
     public Task<SessionParticipant?> FindParticipantByIdWithItemsAsync(Guid participantId, CancellationToken cancellationToken = default)
