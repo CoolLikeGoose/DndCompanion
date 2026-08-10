@@ -1,6 +1,7 @@
 ﻿@page "/sessions/{SessionId:guid}/master"
 @using DndCompanion.Application.Abstractions.Persistence
 @using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestParty
+@using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource
 @using DndCompanion.Application.Features.Monsters.AddMonster
 @using DndCompanion.Application.Features.Monsters.RemoveMonster
 @using DndCompanion.Application.Features.Monsters.UpdateMonster
@@ -15,6 +16,13 @@
 @inject SessionNotificationService SessionNotificationService
 
 @implements IDisposable
+
+@if (_debug is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        @_debug
+    </div>
+}
 
 @if (_session is null)
 {
@@ -130,18 +138,18 @@ else
 
         <h3 class="mb-2 mt-4">Monsters</h3>
         <div class="row g-2">
-            @foreach(var monster in _monsters)
+            @foreach (var monster in _monsters)
             {
                 <div class="col-6">
                     <MonsterCard
-                        Monster="monster" 
+                        Monster="monster"
                         CardClass="@GetCardClass()"
-                        OnCardClick="() => { }"
+                        OnCardClick="() => OnCardClick(monster)"
                         OnDuplicate="() => HandleMonsterDuplicate(monster)"
                         OnRemove="() => HandleRemoveMonster(monster.Id)"/>
                 </div>
             }
-            
+
             <div class="col-6">
                 <button class="btn btn-outline-secondary w-100 h-100" style="min-height: 80px;"
                         @onclick="() => _editMonsterModal.Open()">
@@ -180,7 +188,7 @@ else
     </div>
 }
 
-<DamageHealModal @ref="_damageHealModal" SessionId="SessionId" OnSaved="HandleSaved"/>
+<DamageHealModal @ref="_damageHealModal" SessionId="SessionId"/>
 
 <GiveItemModal @ref="_giveItemModal" SessionId="@SessionId" OnSaved="HandleSaved"/>
 
@@ -197,6 +205,7 @@ else
     private bool _isBusy = false;
     private string? _resourceError = null;
     private Session? _session;
+    private string? _debug;
 
     protected override async Task OnInitializedAsync()
     {
@@ -252,10 +261,40 @@ else
         {
             case MasterTool.DamageHeal:
                 var hp = participant.Character!.Resources.FirstOrDefault(r => r.Type == ResourceType.HitPoints);
-                _damageHealModal.Open(participant.Id, participant.Character!.Name, hp?.CurrentValue ?? 0, hp?.MaxValue ?? 0);
+                _damageHealModal.Open(participant.Character!.Name, hp?.CurrentValue ?? 0, hp?.MaxValue ?? 0, async delta =>
+                {
+                    using var scope = ScopeFactory.CreateScope();
+                    var service = scope.ServiceProvider.GetRequiredService<ChangeCharacterResourceService>();
+                    await service.ExecuteAsync(new ChangeCharacterResourceCommand(
+                        ParticipantId: participant.Id,
+                        ResourceType: ResourceType.HitPoints,
+                        Name: StaticResourceNames.HitPoints,
+                        Delta: delta
+                    ));
+                    await HandleSaved(new SessionEvent(SessionEventType.ResourcesUpdated, SessionId, participant.Id,
+                        new DamageLogEntry(DateTime.UtcNow, participant.Character!.Name, delta, delta > 0)));
+                });
                 break;
             case MasterTool.GiveItem:
                 _giveItemModal.Open(participant.Id, participant.Character!.Name);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void OnCardClick(Monster monster)
+    {
+        switch (_activeTool)
+        {
+            case MasterTool.DamageHeal:
+                _damageHealModal.Open(monster.Name, monster.CurrentHp, monster.MaxHp, async delta =>
+                {
+                    using var scope = ScopeFactory.CreateScope();
+                    var service = scope.ServiceProvider.GetRequiredService<UpdateMonsterService>();
+                    await service.ExecuteAsync(new UpdateMonsterCommand(SessionId, monster.Id, HitPoints: monster.CurrentHp + delta));
+                    await LoadMonstersAsync();
+                });
                 break;
             default:
                 break;
@@ -311,6 +350,7 @@ else
         var repo = scope.ServiceProvider.GetRequiredService<ISessionRepository>();
         var session = await repo.FindByIdWithMonstersAsync(SessionId);
         _monsters = session?.Monsters.ToList() ?? new();
+        StateHasChanged();
     }
 
     private async Task HandleMonsterSave(MonsterFormData monsterData)
@@ -321,10 +361,10 @@ else
             var service = scope.ServiceProvider.GetRequiredService<UpdateMonsterService>();
             await service.ExecuteAsync(new UpdateMonsterCommand(
                 SessionId,
-                monsterData.MonsterId!.Value, 
+                monsterData.MonsterId!.Value,
                 monsterData.Name,
-                monsterData.MaxHp, 
-                monsterData.CurrentHp, 
+                monsterData.MaxHp,
+                monsterData.CurrentHp,
                 monsterData.Description));
         }
         else
@@ -336,7 +376,7 @@ else
                 monsterData.MaxHp,
                 monsterData.Description));
         }
-        
+
         await LoadMonstersAsync();
     }
 
