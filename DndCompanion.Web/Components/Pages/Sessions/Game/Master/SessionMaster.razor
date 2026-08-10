@@ -17,13 +17,6 @@
 
 @implements IDisposable
 
-@if (_debug is not null)
-{
-    <div class="alert alert-danger" role="alert">
-        @_debug
-    </div>
-}
-
 @if (_session is null)
 {
     <p>Loading...</p>
@@ -205,7 +198,6 @@ else
     private bool _isBusy = false;
     private string? _resourceError = null;
     private Session? _session;
-    private string? _debug;
 
     protected override async Task OnInitializedAsync()
     {

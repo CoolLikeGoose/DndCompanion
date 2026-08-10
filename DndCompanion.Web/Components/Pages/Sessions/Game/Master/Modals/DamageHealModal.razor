@@ -60,20 +60,12 @@
     <div class="modal-backdrop fade show"></div>
 }
 
-@if (_debug is not null)
-{
-    <div class="alert alert-danger" role="alert">
-        @_debug
-    </div>
-}
-
 @code {
     [Parameter] public Guid SessionId { get; set; }
 
     private ElementReference _inputRef;
 
     private bool _modalOpen = false;
-    private string? _debug;
     private Func<int, Task>? _onApply;
 
     private string _targetName = string.Empty;
