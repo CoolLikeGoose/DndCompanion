@@ -19,6 +19,9 @@ using DndCompanion.Application.Features.Characters.Resources.SetCharacterResourc
 using DndCompanion.Application.Features.Characters.SelectCharacter;
 using DndCompanion.Application.Features.Characters.UpdateInfo;
 using DndCompanion.Application.Features.Characters.UpdateStats;
+using DndCompanion.Application.Features.Monsters.AddMonster;
+using DndCompanion.Application.Features.Monsters.RemoveMonster;
+using DndCompanion.Application.Features.Monsters.UpdateMonster;
 using DndCompanion.Application.Features.Sessions.CreateSession;
 using DndCompanion.Application.Features.Sessions.JoinSession;
 using Infrastructure.Identity;
@@ -65,6 +68,10 @@ builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddScoped<ISessionRepository, SessionRepository>();
 builder.Services.AddScoped<CreateSessionService>();
 builder.Services.AddScoped<JoinSessionService>();
+
+builder.Services.AddScoped<AddMonsterService>();
+builder.Services.AddScoped<RemoveMonsterService>();
+builder.Services.AddScoped<UpdateMonsterService>();
 
 // Character
 builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();

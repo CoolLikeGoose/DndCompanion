@@ -1,10 +1,14 @@
 ﻿@page "/sessions/{SessionId:guid}/master"
 @using DndCompanion.Application.Abstractions.Persistence
 @using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestParty
+@using DndCompanion.Application.Features.Monsters.AddMonster
+@using DndCompanion.Application.Features.Monsters.RemoveMonster
+@using DndCompanion.Application.Features.Monsters.UpdateMonster
 @using Domain.Entities
 @using Domain.Enums
 @using Web.Components.Shared
 @using Web.Components.Pages.Sessions.Game.Master.Modals
+@using Web.Components.Pages.Sessions.Game.Master.Models
 
 @inject IServiceScopeFactory ScopeFactory
 
@@ -47,6 +51,7 @@ else
                 }
             </div>
         </div>
+
         <div class="row g-2">
             @foreach (var participant in _session.Participants.Where(p => p.Role == SessionRole.Player && p.Character is not null))
             {
@@ -122,6 +127,28 @@ else
                 </div>
             }
         </div>
+
+        <h3 class="mb-2 mt-4">Monsters</h3>
+        <div class="row g-2">
+            @foreach(var monster in _monsters)
+            {
+                <div class="col-6">
+                    <MonsterCard
+                        Monster="monster" 
+                        CardClass="@GetCardClass()"
+                        OnCardClick="() => { }"
+                        OnDuplicate="HandleMonsterDuplicate"
+                        OnRemove="() => HandleMonsterDuplicate(monster)"/>
+                </div>
+            }
+            
+            <div class="col-6">
+                <button class="btn btn-outline-secondary w-100 h-100" style="min-height: 80px;"
+                        @onclick="() => _editMonsterModal.Open()">
+                    + Add monster
+                </button>
+            </div>
+        </div>
     </div>
 
     <div style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1000;">
@@ -157,6 +184,8 @@ else
 
 <GiveItemModal @ref="_giveItemModal" SessionId="@SessionId" OnSaved="HandleSaved"/>
 
+<EditMonsterModal @ref="_editMonsterModal" OnSaved="HandleMonsterSave"/>
+
 <SessionNavBar SessionId="@SessionId" ParticipantId="@ParticipantId" Role="@SessionRole.Master"/>
 
 @code {
@@ -172,6 +201,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadSessionAsync();
+        await LoadMonstersAsync();
         SessionNotificationService.Subscribe(SessionId, OnSessionUpdated);
     }
 
@@ -269,6 +299,61 @@ else
 
         await SessionNotificationService.NotifyAsync(sessionEvent);
         await OnSessionUpdated(sessionEvent);
+    }
+
+    // Monsters
+    private List<Monster> _monsters = new();
+    private EditMonsterModal _editMonsterModal = null!;
+
+    private async Task LoadMonstersAsync()
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var repo = scope.ServiceProvider.GetRequiredService<ISessionRepository>();
+        var session = await repo.FindByIdWithMonstersAsync(SessionId);
+        _monsters = session?.Monsters.ToList() ?? new();
+    }
+
+    private async Task HandleMonsterSave(MonsterFormData monsterData)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        if (monsterData.IsEdit)
+        {
+            var service = scope.ServiceProvider.GetRequiredService<UpdateMonsterService>();
+            await service.ExecuteAsync(new UpdateMonsterCommand(
+                SessionId,
+                monsterData.MonsterId!.Value, 
+                monsterData.Name,
+                monsterData.MaxHp, 
+                monsterData.CurrentHp, 
+                monsterData.Description));
+        }
+        else
+        {
+            var service = scope.ServiceProvider.GetRequiredService<AddMonsterService>();
+            await service.ExecuteAsync(new AddMonsterCommand(
+                SessionId,
+                monsterData.Name,
+                monsterData.MaxHp,
+                monsterData.Description));
+        }
+        
+        await LoadMonstersAsync();
+    }
+
+    private async Task HandleRemoveMonster(Guid monsterId)
+    {
+        var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<RemoveMonsterService>();
+        await service.ExecuteAsync(new RemoveMonsterCommand(SessionId, monsterId));
+        await LoadMonstersAsync();
+    }
+
+    private async Task HandleMonsterDuplicate(Monster monster)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<AddMonsterService>();
+        await service.ExecuteAsync(new AddMonsterCommand(SessionId, monster.Name + " (copy)", monster.MaxHp, monster.Description));
+        await LoadMonstersAsync();
     }
 
     public void Dispose()

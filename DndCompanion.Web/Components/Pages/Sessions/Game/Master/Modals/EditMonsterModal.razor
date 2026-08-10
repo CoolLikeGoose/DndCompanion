@@ -1,0 +1,110 @@
+﻿@using Domain.Entities
+@using Web.Components.Pages.Sessions.Game.Master.Models
+
+@if (_modalOpen)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add ability slot</h5>
+                    <button type="button" class="btn-close" @onclick="() => _modalOpen = false"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="monsterName" class="form-label">Name</label>
+                        <input type="text" id="monsterName" class="form-control" @bind="_name"/>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="monsterDescription" class="form-label">Description</label>
+                        <input type="text" id="monsterDescription" class="form-control" @bind="_description"/>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="maxMonsterHp" class="form-label">Max HP</label>
+                        <input type="number" id="maxMonsterHp" class="form-control" @bind="_maxHp" min="1"/>
+                    </div>
+
+                    @if (_isEdit)
+                    {
+                        <div class="mb-3">
+                            <label for="currentMonsterHp" class="form-label">Current HP</label>
+                            <input type="number" id="currentMonsterHp" class="form-control" @bind="_currentHp" min="0"
+                                   max="@(_maxHp)"/>
+                        </div>
+                    }
+
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" @onclick="HandleSave">
+                            @if (_isEdit)
+                            {
+                                <span>Save</span>
+                            }
+                            else
+                            {
+                                <span>Add</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public EventCallback<MonsterFormData> OnSaved { get; set; }
+
+    private bool _modalOpen = false;
+    private bool _isEdit = false;
+
+    private Guid? _monsterId;
+    private string _name = string.Empty;
+    private string _description = string.Empty;
+    private int _maxHp = 1;
+    private int _currentHp = 0;
+
+    public void Open()
+    {
+        _name = string.Empty;
+        _maxHp = 1;
+        _currentHp = 0;
+
+        _isEdit = false;
+        _modalOpen = true;
+    }
+
+    public void Open(Monster monster)
+    {
+        _monsterId = monster.Id;
+        _name = monster.Name;
+        _maxHp = monster.MaxHp;
+        _currentHp = monster.CurrentHp;
+        _description = monster?.Description ?? string.Empty;
+        
+        _isEdit = true;
+        _modalOpen = true;
+    }
+
+    private void HandleSave()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            return;
+        }
+
+        OnSaved.InvokeAsync(new MonsterFormData(
+            _name,
+            _maxHp,
+            _currentHp,
+            string.IsNullOrWhiteSpace(_description) ? null : _description,
+            _isEdit,
+            _monsterId
+        ));
+        _modalOpen = false;
+    }
+}
