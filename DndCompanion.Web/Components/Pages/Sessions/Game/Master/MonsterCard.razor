@@ -1,7 +1,7 @@
 ﻿@using Domain.Entities
 
 <div class="card p-3 master-card @CardClass" @onclick="OnCardClick">
-    <div class="d-flex justify-content-between align-items-start">
+    <div class="d-flex justify-content-between">
         <div>
             <div class="fw-semibold">@Monster.Name</div>
             @if (!string.IsNullOrWhiteSpace(Monster.Description))
@@ -23,19 +23,19 @@
                 <i class="bi bi-trash"></i>
             </button>
         </div>
-        
-        @{
-            var percent = Monster.MaxHp > 0 ? (double)Monster.CurrentHp / Monster.MaxHp * 100 : 0;
-            var hue = (int)(percent * 1.2);
-        }
-        <div class="mt-2">
-            <div class="d-flex justify-content-between small text-muted mb-1">
-                <span>HP</span>
-                <span>@Monster.CurrentHp/@Monster.MaxHp</span>
-            </div>
-            <div class="progress" style="height: 6px;">
-                <div class="progress-bar" style="width: @percent.ToString("F0")%; background-color: hsl(@hue, 80%, 45%);"></div>
-            </div>
+    </div>
+    
+    @{
+        var percent = Monster.MaxHp > 0 ? (double)Monster.CurrentHp / Monster.MaxHp * 100 : 0;
+        var hue = (int)(percent * 1.2);
+    }
+    <div class="mt-2">
+        <div class="d-flex justify-content-between small text-muted mb-1">
+            <span>HP</span>
+            <span>@Monster.CurrentHp/@Monster.MaxHp</span>
+        </div>
+        <div class="progress" style="height: 6px;">
+            <div class="progress-bar" style="width: @percent.ToString("F0")%; background-color: hsl(@hue, 80%, 45%);"></div>
         </div>
     </div>
 </div>
