@@ -137,8 +137,8 @@ else
                         Monster="monster" 
                         CardClass="@GetCardClass()"
                         OnCardClick="() => { }"
-                        OnDuplicate="HandleMonsterDuplicate"
-                        OnRemove="() => HandleMonsterDuplicate(monster)"/>
+                        OnDuplicate="() => HandleMonsterDuplicate(monster)"
+                        OnRemove="() => HandleRemoveMonster(monster.Id)"/>
                 </div>
             }
             
