@@ -28,7 +28,13 @@ For windows (automatically adds firewall rule, enabling port connections from ot
 ## Tech stack
 
 * .NET 8
-* ASP.NET Core
-* EF Core
-* SQLite
-* Blazor Server
+* ASP.NET Core (Minimal API + Blazor Server)
+* Entity Framework Core + SQLite
+* SignalR via Blazor Server
+* Bootstrap 5
+* xUnit (unit tests)
+
+## Architecture
+* Clean Architecture with Vertical Slice
+* Repository pattern
+* Command/Result pattern (CQRS-inspired)
