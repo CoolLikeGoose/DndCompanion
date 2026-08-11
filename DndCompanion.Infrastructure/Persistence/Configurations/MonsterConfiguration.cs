@@ -21,6 +21,6 @@ public class MonsterConfiguration : IEntityTypeConfiguration<Monster>
         builder.Property(x => x.MaxHp)
             .IsRequired();
         
-        builder.HasIndex(x => new { x.SessionId, x.Name }).IsUnique();
+        builder.HasIndex(x => x.SessionId);
     }
 }

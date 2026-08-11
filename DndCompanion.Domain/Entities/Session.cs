@@ -63,9 +63,6 @@ public class Session
     
     public Monster AddMonster(string name, int maxHp, string? description = null)
     {
-        if (_monsters.Any(x => x.Name == name))
-            throw new ArgumentException($"Monster with name {name} already exists for this session.", nameof(name));
-        
         var monster = Monster.Create(Id, name, maxHp, description);
         _monsters.Add(monster);
         return monster;
@@ -89,11 +86,6 @@ public class Session
         var monster = _monsters.FirstOrDefault(x => x.Id == monsterId);
         if (monster is null)
             throw new ArgumentException($"Monster with id {monsterId} not found for this session.", nameof(monsterId));
-        
-        if (name is not null &&
-            monster.Name != name &&
-            _monsters.Any(x => x.Name == name))
-            throw new ArgumentException($"Monster with name {name} already exists for this session.", nameof(name));
         
         monster.Update(name, maxHp, currentHp, description);
     }

@@ -12,6 +12,21 @@ namespace Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "BestiaryEntries",
+                columns: table => new
+                {
+                    BestiaryEntryId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MasterId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    MaxHp = table.Column<int>(type: "INTEGER", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BestiaryEntries", x => x.BestiaryEntryId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Characters",
                 columns: table => new
                 {
@@ -162,6 +177,7 @@ namespace Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     SessionId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    BestiaryEntryId = table.Column<Guid>(type: "TEXT", nullable: true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     CurrentHp = table.Column<int>(type: "INTEGER", nullable: false),
                     MaxHp = table.Column<int>(type: "INTEGER", nullable: false),
@@ -208,6 +224,12 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_BestiaryEntries_MasterId_Name",
+                table: "BestiaryEntries",
+                columns: new[] { "MasterId", "Name" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Characters_UserId",
                 table: "Characters",
                 column: "UserId");
@@ -218,10 +240,9 @@ namespace Infrastructure.Migrations
                 column: "CharacterId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Monsters_SessionId_Name",
+                name: "IX_Monsters_SessionId",
                 table: "Monsters",
-                columns: new[] { "SessionId", "Name" },
-                unique: true);
+                column: "SessionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Resources_CharacterId",
@@ -254,6 +275,9 @@ namespace Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "BestiaryEntries");
+
             migrationBuilder.DropTable(
                 name: "CharacterInfos");
 

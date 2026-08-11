@@ -1,21 +1,18 @@
 ﻿namespace Domain.Entities;
 
-public class Monster
+public class BestiaryEntry
 {
-    private Monster()
+    private BestiaryEntry()
     {
     }
-
-    public Guid Id { get; private set; }
-    public Guid SessionId { get; private set; }
-    public Guid? BestiaryEntryId { get; private set; }
+    
+    public Guid BestiaryEntryId { get; private set; }
+    public Guid MasterId { get; private set; }
     public string Name { get; private set; } = null!;
-
-    public int CurrentHp { get; private set; }
     public int MaxHp { get; private set; }
     public string? Description { get; private set; }
 
-    public static Monster Create(Guid sessionId, string name, int maxHp, string? description = null)
+    public static BestiaryEntry Create(Guid masterId, string name, int maxHp, string? description = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Name is required", nameof(name));
@@ -26,25 +23,18 @@ public class Monster
 
         if (maxHp <= 0)
             throw new ArgumentException("Max HP must be greater than 0", nameof(maxHp));
-
-        var monster = new Monster
+        
+        return new BestiaryEntry
         {
-            Id = Guid.NewGuid(),
-            SessionId = sessionId,
-            Name = normalizedName,
+            BestiaryEntryId = Guid.NewGuid(),
+            MasterId = masterId,
+            Name = name,
             MaxHp = maxHp,
-            CurrentHp = maxHp,
             Description = description
         };
-
-        return monster;
     }
-
-    public void Update(
-        string? name = null, 
-        int? maxHp = null, 
-        int? currentHp = null, 
-        string? description = null)
+    
+    public void Update(string? name = null, int? maxHp = null, string? description = null)
     {
         if (maxHp.HasValue && maxHp <= 0)
             throw new ArgumentException("Max HP must be greater than 0", nameof(maxHp));
@@ -60,14 +50,11 @@ public class Monster
             
             Name = normalizedName;
         }
-        
-        MaxHp = maxHp.HasValue ? maxHp.Value : MaxHp;
-        
-        CurrentHp = currentHp.HasValue ? Math.Clamp(currentHp.Value, 0, MaxHp) : Math.Min(CurrentHp, MaxHp);
-        
+
+        if (maxHp.HasValue)
+            MaxHp = maxHp.Value;
+
         if (!string.IsNullOrWhiteSpace(description))
-        {
-            Description = description?.Trim() ?? Description;
-        }
+            Description = description;
     }
 }

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DndCompanionDbContext))]
-    [Migration("20260808100324_InitialCreate")]
+    [Migration("20260811180448_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -19,6 +19,33 @@ namespace Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.14");
+
+            modelBuilder.Entity("Domain.Entities.BestiaryEntry", b =>
+                {
+                    b.Property<Guid>("BestiaryEntryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("MasterId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MaxHp")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("BestiaryEntryId");
+
+                    b.HasIndex("MasterId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("BestiaryEntries", (string)null);
+                });
 
             modelBuilder.Entity("Domain.Entities.Character", b =>
                 {
@@ -163,6 +190,9 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("BestiaryEntryId")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("CurrentHp")
                         .HasColumnType("INTEGER");
 
@@ -182,8 +212,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SessionId", "Name")
-                        .IsUnique();
+                    b.HasIndex("SessionId");
 
                     b.ToTable("Monsters", (string)null);
                 });
