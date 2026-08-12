@@ -5,4 +5,4 @@ public record AddMonsterCommand(
     string Name,
     int MaxHitPoints,
     string? Description = null,
-    Guid? BestiaryEntryId = null);
+    bool SaveToBestiary = false);

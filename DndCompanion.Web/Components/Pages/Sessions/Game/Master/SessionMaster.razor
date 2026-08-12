@@ -305,24 +305,13 @@
         }
         else
         {
-            AddBestiaryEntryResult? bestiaryEntryResult = null;
-            if (monsterData.SaveToBestiary && CurrentUser.UserId.HasValue)
-            {
-                var bestiaryService = scope.ServiceProvider.GetRequiredService<AddBestiaryEntryService>();
-                bestiaryEntryResult = await bestiaryService.ExecuteAsync(new AddBestiaryEntryCommand(
-                    CurrentUser.UserId.Value,
-                    monsterData.Name,
-                    monsterData.MaxHp,
-                    monsterData.Description));
-            };
-            
             var service = scope.ServiceProvider.GetRequiredService<AddMonsterService>();
             await service.ExecuteAsync(new AddMonsterCommand(
                 SessionId,
                 monsterData.Name,
                 monsterData.MaxHp,
                 monsterData.Description,
-                bestiaryEntryResult?.BestiaryEntryId));
+                monsterData.SaveToBestiary));
         }
 
         await LoadMonstersAsync();
