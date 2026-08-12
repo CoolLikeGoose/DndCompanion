@@ -35,6 +35,15 @@ public sealed class BestiaryRepository : IBestiaryRepository
             .ToListAsync(cancellationToken);
     }
 
+    public Task<List<BestiaryEntry>> SearchBestiaryEntriesAsync(Guid masterId, string namePrefix, int limit = 5,
+        CancellationToken cancellationToken = default)
+    {
+        return _dbContext.BestiaryEntries
+            .Where(x => x.MasterId == masterId && EF.Functions.Like(x.Name, $"{namePrefix}%"))
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+    }
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return _dbContext.SaveChangesAsync(cancellationToken);

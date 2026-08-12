@@ -125,7 +125,10 @@
 
 <GiveItemModal @ref="_giveItemModal" SessionId="@SessionId" OnSaved="HandleSaved"/>
 
-<EditMonsterModal @ref="_editMonsterModal" OnSaved="HandleMonsterSave" IsAuthenticated="@CurrentUser.IsAuthenticated"/>
+<EditMonsterModal @ref="_editMonsterModal" 
+                  OnSaved="HandleMonsterSave" 
+                  IsAuthenticated="@CurrentUser.IsAuthenticated"
+                  SearchBestiary="SearchBestiaryEntries"/>
 
 <SessionNavBar SessionId="@SessionId" ParticipantId="@ParticipantId" Role="@SessionRole.Master"/>
 
@@ -331,6 +334,16 @@
         var service = scope.ServiceProvider.GetRequiredService<AddMonsterService>();
         await service.ExecuteAsync(new AddMonsterCommand(SessionId, monster.Name, monster.MaxHp, monster.Description));
         await LoadMonstersAsync();
+    }
+    
+    private async Task<List<BestiaryEntry>> SearchBestiaryEntries(string prefix, CancellationToken ct)
+    {
+        if (CurrentUser.UserId is not { } masterId || string.IsNullOrWhiteSpace(prefix))
+            return [];
+
+        using var scope = ScopeFactory.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IBestiaryRepository>();
+        return await repository.SearchBestiaryEntriesAsync(masterId, prefix, limit: 5, ct);
     }
 
     public void Dispose()

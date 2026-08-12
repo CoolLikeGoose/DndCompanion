@@ -12,9 +12,24 @@
                 </div>
 
                 <div class="modal-body">
-                    <div class="mb-3">
+                    <div class="mb-3 position-relative">
                         <label for="monsterName" class="form-label">Name</label>
-                        <input type="text" id="monsterName" class="form-control" @bind="_name"/>
+                        <input type="text" id="monsterName" class="form-control" value="@_name" autocomplete="off"
+                               @oninput="OnNameInput"
+                               @onblur="OnNameBlur"/>
+                        
+                        @if (_suggestions.Count > 0)
+                        {
+                            <div class="list-group position-absolute w-100 shadow-sm" style="z-index: 1000;">
+                                @foreach (var entry in _suggestions)
+                                {
+                                    <button type="button" class="list-group-item list-group-item-action py-1"
+                                            @onmousedown="() => SelectSuggestion(entry)">
+                                        @entry.Name <span class="text-muted small">(HP @entry.MaxHp)</span>
+                                    </button>
+                                }
+                            </div>
+                        }
                     </div>
 
                     <div class="mb-3">
@@ -37,20 +52,23 @@
                     }
                     else
                     {
-                        if (IsAuthenticated)
+                        if (_bestiaryEntryId is null)
                         {
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="saveToBestiary" @bind="_saveToBestiary"/>
-                                <label class="form-check-label" for="saveToBestiary">
-                                    Save to Bestiary
-                                </label>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="text-muted small">
-                                Please log in to save monsters to your bestiary.
-                            </div>
+                            if (IsAuthenticated)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="saveToBestiary" @bind="_saveToBestiary"/>
+                                    <label class="form-check-label" for="saveToBestiary">
+                                        Save to Bestiary
+                                    </label>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-muted small">
+                                    Please log in to save monsters to your bestiary.
+                                </div>
+                            }
                         }
                     }
 
@@ -75,12 +93,14 @@
 }
 
 @code {
+    [Parameter] public Func<string, CancellationToken, Task<List<BestiaryEntry>>>? SearchBestiary { get; set; }
     [Parameter] public EventCallback<MonsterFormData> OnSaved { get; set; }
     [Parameter] public bool IsAuthenticated { get; set; }
 
     private bool _modalOpen = false;
     private bool _isEdit = false;
     private bool _saveToBestiary = false;
+    private Guid? _bestiaryEntryId;
 
     private Guid? _monsterId;
     private string _name = string.Empty;
@@ -92,8 +112,10 @@
     {
         _name = string.Empty;
         _maxHp = 1;
+        _description = string.Empty;
         _currentHp = 0;
         _saveToBestiary = false;
+        _bestiaryEntryId = null;
 
         _isEdit = false;
         _modalOpen = true;
@@ -111,6 +133,45 @@
         _modalOpen = true;
     }
 
+    // for debouncing
+    private CancellationTokenSource? _searchCts;
+    private List<BestiaryEntry> _suggestions = new();
+    private async Task OnNameInput(ChangeEventArgs e)
+    {
+        if (SearchBestiary == null) return;
+        
+        _name = e.Value?.ToString() ?? string.Empty;
+        
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+        var token = _searchCts.Token;
+
+        try
+        {
+            await Task.Delay(300, token);
+            if (token.IsCancellationRequested) return;
+
+            _suggestions = await SearchBestiary.Invoke(_name, token);
+            StateHasChanged();
+        }
+        catch (TaskCanceledException) {}
+    }
+
+    private async Task OnNameBlur()
+    {
+        await Task.Delay(150);
+        _suggestions.Clear();
+    }
+
+    private void SelectSuggestion(BestiaryEntry entry)
+    {
+        _name = entry.Name; 
+        _bestiaryEntryId = entry.BestiaryEntryId;
+        _description = entry.Description ?? string.Empty;
+        _maxHp = entry.MaxHp;
+        _suggestions.Clear();
+    }
+
     private void HandleSave()
     {
         if (string.IsNullOrWhiteSpace(_name))
@@ -125,6 +186,7 @@
             string.IsNullOrWhiteSpace(_description) ? null : _description,
             _isEdit,
             _monsterId,
+            _bestiaryEntryId,
             _saveToBestiary
         ));
         _modalOpen = false;
