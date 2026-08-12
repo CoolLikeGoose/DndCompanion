@@ -9,7 +9,6 @@ using DndCompanion.Application.Features.Characters.Items.RemoveItem;
 using DndCompanion.Application.Features.Characters.Items.UpdateItem;
 using DndCompanion.Application.Features.Characters.Resources.AddAbilitySlot;
 using DndCompanion.Application.Features.Characters.Resources.AddDeathSave;
-using DndCompanion.Application.Features.Characters.Resources.ApplyRest;
 using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestParty;
 using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestSingle;
 using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource;
@@ -19,6 +18,7 @@ using DndCompanion.Application.Features.Characters.Resources.SetCharacterResourc
 using DndCompanion.Application.Features.Characters.SelectCharacter;
 using DndCompanion.Application.Features.Characters.UpdateInfo;
 using DndCompanion.Application.Features.Characters.UpdateStats;
+using DndCompanion.Application.Features.Monsters.AddBestiaryEntry;
 using DndCompanion.Application.Features.Monsters.AddMonster;
 using DndCompanion.Application.Features.Monsters.RemoveMonster;
 using DndCompanion.Application.Features.Monsters.UpdateMonster;
@@ -69,9 +69,11 @@ builder.Services.AddScoped<ISessionRepository, SessionRepository>();
 builder.Services.AddScoped<CreateSessionService>();
 builder.Services.AddScoped<JoinSessionService>();
 
+builder.Services.AddScoped<IBestiaryRepository, BestiaryRepository>();
 builder.Services.AddScoped<AddMonsterService>();
 builder.Services.AddScoped<RemoveMonsterService>();
 builder.Services.AddScoped<UpdateMonsterService>();
+builder.Services.AddScoped<AddBestiaryEntryService>();
 
 // Character
 builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();

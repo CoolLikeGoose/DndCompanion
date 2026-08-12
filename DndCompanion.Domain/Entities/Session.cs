@@ -61,9 +61,9 @@ public class Session
         return participant;
     }
     
-    public Monster AddMonster(string name, int maxHp, string? description = null)
+    public Monster AddMonster(string name, int maxHp, string? description = null, Guid? bestiaryEntryId = null)
     {
-        var monster = Monster.Create(Id, name, maxHp, description);
+        var monster = Monster.Create(Id, name, maxHp, description, bestiaryEntryId);
         _monsters.Add(monster);
         return monster;
     }

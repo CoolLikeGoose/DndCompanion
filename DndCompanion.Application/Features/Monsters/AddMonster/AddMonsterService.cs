@@ -25,7 +25,8 @@ public class AddMonsterService
             var monster = session.AddMonster(
                 command.Name,
                 command.MaxHitPoints,
-                command.Description);
+                command.Description,
+                command.BestiaryEntryId);
             
             await _sessionRepository.SaveChangesAsync(cancellationToken);
             return new AddMonsterResult(true, Monster: monster);

@@ -7,7 +7,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add ability slot</h5>
+                    <h5 class="modal-title">Add monster</h5>
                     <button type="button" class="btn-close" @onclick="() => _modalOpen = false"></button>
                 </div>
 
@@ -35,6 +35,24 @@
                                    max="@(_maxHp)"/>
                         </div>
                     }
+                    else
+                    {
+                        if (IsAuthenticated)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="saveToBestiary" @bind="_saveToBestiary"/>
+                                <label class="form-check-label" for="saveToBestiary">
+                                    Save to Bestiary
+                                </label>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-muted small">
+                                Please log in to save monsters to your bestiary.
+                            </div>
+                        }
+                    }
 
                     <div class="modal-footer">
                         <button class="btn btn-primary" @onclick="HandleSave">
@@ -58,9 +76,11 @@
 
 @code {
     [Parameter] public EventCallback<MonsterFormData> OnSaved { get; set; }
+    [Parameter] public bool IsAuthenticated { get; set; }
 
     private bool _modalOpen = false;
     private bool _isEdit = false;
+    private bool _saveToBestiary = false;
 
     private Guid? _monsterId;
     private string _name = string.Empty;
@@ -73,6 +93,7 @@
         _name = string.Empty;
         _maxHp = 1;
         _currentHp = 0;
+        _saveToBestiary = false;
 
         _isEdit = false;
         _modalOpen = true;
@@ -103,7 +124,8 @@
             _currentHp,
             string.IsNullOrWhiteSpace(_description) ? null : _description,
             _isEdit,
-            _monsterId
+            _monsterId,
+            _saveToBestiary
         ));
         _modalOpen = false;
     }

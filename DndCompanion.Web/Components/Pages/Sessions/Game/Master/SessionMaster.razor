@@ -1,7 +1,9 @@
 ﻿@page "/sessions/{SessionId:guid}/master"
+@using DndCompanion.Application.Abstractions.Identity
 @using DndCompanion.Application.Abstractions.Persistence
 @using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestParty
 @using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource
+@using DndCompanion.Application.Features.Monsters.AddBestiaryEntry
 @using DndCompanion.Application.Features.Monsters.AddMonster
 @using DndCompanion.Application.Features.Monsters.RemoveMonster
 @using DndCompanion.Application.Features.Monsters.UpdateMonster
@@ -13,6 +15,7 @@
 
 @inject IServiceScopeFactory ScopeFactory
 
+@inject ICurrentUser CurrentUser
 @inject SessionNotificationService SessionNotificationService
 
 @implements IDisposable
@@ -122,7 +125,7 @@
 
 <GiveItemModal @ref="_giveItemModal" SessionId="@SessionId" OnSaved="HandleSaved"/>
 
-<EditMonsterModal @ref="_editMonsterModal" OnSaved="HandleMonsterSave"/>
+<EditMonsterModal @ref="_editMonsterModal" OnSaved="HandleMonsterSave" IsAuthenticated="@CurrentUser.IsAuthenticated"/>
 
 <SessionNavBar SessionId="@SessionId" ParticipantId="@ParticipantId" Role="@SessionRole.Master"/>
 
@@ -302,12 +305,24 @@
         }
         else
         {
+            AddBestiaryEntryResult? bestiaryEntryResult = null;
+            if (monsterData.SaveToBestiary && CurrentUser.UserId.HasValue)
+            {
+                var bestiaryService = scope.ServiceProvider.GetRequiredService<AddBestiaryEntryService>();
+                bestiaryEntryResult = await bestiaryService.ExecuteAsync(new AddBestiaryEntryCommand(
+                    CurrentUser.UserId.Value,
+                    monsterData.Name,
+                    monsterData.MaxHp,
+                    monsterData.Description));
+            };
+            
             var service = scope.ServiceProvider.GetRequiredService<AddMonsterService>();
             await service.ExecuteAsync(new AddMonsterCommand(
                 SessionId,
                 monsterData.Name,
                 monsterData.MaxHp,
-                monsterData.Description));
+                monsterData.Description,
+                bestiaryEntryResult?.BestiaryEntryId));
         }
 
         await LoadMonstersAsync();
@@ -325,7 +340,7 @@
     {
         using var scope = ScopeFactory.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<AddMonsterService>();
-        await service.ExecuteAsync(new AddMonsterCommand(SessionId, monster.Name + " (copy)", monster.MaxHp, monster.Description));
+        await service.ExecuteAsync(new AddMonsterCommand(SessionId, monster.Name, monster.MaxHp, monster.Description));
         await LoadMonstersAsync();
     }
 

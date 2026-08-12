@@ -4,4 +4,5 @@ public record AddMonsterCommand(
     Guid SessionId,
     string Name,
     int MaxHitPoints,
-    string? Description = null);
+    string? Description = null,
+    Guid? BestiaryEntryId = null);

@@ -28,7 +28,7 @@ public class BestiaryEntry
         {
             BestiaryEntryId = Guid.NewGuid(),
             MasterId = masterId,
-            Name = name,
+            Name = normalizedName,
             MaxHp = maxHp,
             Description = description
         };

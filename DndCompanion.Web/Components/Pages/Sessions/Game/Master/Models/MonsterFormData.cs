@@ -6,4 +6,5 @@ public sealed record MonsterFormData(
     int CurrentHp,
     string? Description,
     bool IsEdit,
-    Guid? MonsterId = null);
+    Guid? MonsterId = null,
+    bool SaveToBestiary = false);
