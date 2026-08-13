@@ -10,6 +10,11 @@
                title="Master">
                 <i class="bi bi-person-fill"></i>
             </a>
+            <a href="/sessions/@SessionId/bestiary?participantId=@ParticipantId" 
+               class="btn rounded-pill @(IsActive("master") ? "btn-primary" : "btn-outline-secondary")"
+               title="Bestiary">
+                <i class="bi bi-journal-bookmark"></i>
+            </a>
             <a href="/sessions/@SessionId/battlelog?participantId=@ParticipantId" 
                class="btn rounded-pill @(IsActive("battlelog") ? "btn-primary" : "btn-outline-secondary")"
                title="Battlelog">

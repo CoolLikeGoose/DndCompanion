@@ -1,0 +1,13 @@
+﻿@page "/sessions/{SessionId:guid}/bestiary"
+@using Domain.Enums
+@using Web.Components.Pages.Sessions.Game.Shared
+
+<h3>SessionBestiary</h3>
+
+<SessionNavBar SessionId="@SessionId" ParticipantId="@ParticipantId" Role="@SessionRole.Master"/>
+
+@code {
+    [Parameter] public Guid SessionId { get; set; }
+    [SupplyParameterFromQuery(Name = "participantId")]
+    public Guid ParticipantId { get; set; }
+}
