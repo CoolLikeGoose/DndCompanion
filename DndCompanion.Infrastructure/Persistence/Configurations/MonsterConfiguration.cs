@@ -27,6 +27,12 @@ public class MonsterConfiguration : IEntityTypeConfiguration<Monster>
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
         
+        builder.HasOne<Battle>()
+            .WithMany()
+            .HasForeignKey(m => m.BattleId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+        
         builder.HasIndex(x => x.SessionId);
     }
 }

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DndCompanionDbContext))]
-    [Migration("20260813091310_InitialCreate")]
+    [Migration("20260813122134_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -19,6 +19,26 @@ namespace Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.14");
+
+            modelBuilder.Entity("Domain.Entities.Battle", b =>
+                {
+                    b.Property<Guid>("BattleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("BattleId");
+
+                    b.HasIndex("SessionId");
+
+                    b.ToTable("Battles", (string)null);
+                });
 
             modelBuilder.Entity("Domain.Entities.BestiaryEntry", b =>
                 {
@@ -190,6 +210,9 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("BattleId")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid?>("BestiaryEntryId")
                         .HasColumnType("TEXT");
 
@@ -211,6 +234,8 @@ namespace Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BattleId");
 
                     b.HasIndex("BestiaryEntryId");
 
@@ -264,6 +289,9 @@ namespace Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DefaultBattleId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("InviteCode")
@@ -345,6 +373,15 @@ namespace Infrastructure.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Battle", b =>
+                {
+                    b.HasOne("Domain.Entities.Session", null)
+                        .WithMany("Battles")
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Domain.Entities.CharacterInfo", b =>
                 {
                     b.HasOne("Domain.Entities.Character", null)
@@ -374,6 +411,12 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Monster", b =>
                 {
+                    b.HasOne("Domain.Entities.Battle", null)
+                        .WithMany()
+                        .HasForeignKey("BattleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Domain.Entities.BestiaryEntry", null)
                         .WithMany()
                         .HasForeignKey("BestiaryEntryId")
@@ -426,6 +469,8 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Session", b =>
                 {
+                    b.Navigation("Battles");
+
                     b.Navigation("Monsters");
 
                     b.Navigation("Participants");
