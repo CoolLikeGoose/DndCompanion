@@ -13,7 +13,18 @@ public sealed class BestiaryRepository : IBestiaryRepository
     {
         _dbContext = dbContext;
     }
-    
+
+    public Task<BestiaryEntry?> FindByIdAsync(Guid bestiaryEntryId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.BestiaryEntries
+            .FirstOrDefaultAsync(x => x.BestiaryEntryId == bestiaryEntryId, cancellationToken);
+    }
+
+    public void Remove(BestiaryEntry entry)
+    {
+        _dbContext.BestiaryEntries.Remove(entry);
+    }
+
     public async Task AddToBestiaryAsync(BestiaryEntry bestiaryEntry, CancellationToken cancellationToken = default)
     {
         await _dbContext.BestiaryEntries.AddAsync(bestiaryEntry, cancellationToken);

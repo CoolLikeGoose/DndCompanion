@@ -1,5 +1,6 @@
 ﻿@using Domain.Entities
 @using Web.Components.Pages.Sessions.Game.Master.Models
+@using Web.Components.Pages.Sessions.Game.Shared
 
 @if (_modalOpen)
 {
@@ -12,35 +13,26 @@
                 </div>
 
                 <div class="modal-body">
-                    <div class="mb-3 position-relative">
-                        <label for="monsterName" class="form-label">Name</label>
-                        <input type="text" id="monsterName" class="form-control" value="@_name" autocomplete="off"
-                               @oninput="OnNameInput"
-                               @onblur="OnNameBlur"/>
-                        
-                        @if (_suggestions.Count > 0)
-                        {
-                            <div class="list-group position-absolute w-100 shadow-sm" style="z-index: 1000;">
-                                @foreach (var entry in _suggestions)
-                                {
-                                    <button type="button" class="list-group-item list-group-item-action py-1"
-                                            @onmousedown="() => SelectSuggestion(entry)">
-                                        @entry.Name <span class="text-muted small">(HP @entry.MaxHp)</span>
-                                    </button>
-                                }
-                            </div>
-                        }
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="monsterDescription" class="form-label">Description</label>
-                        <input type="text" id="monsterDescription" class="form-control" @bind="_description"/>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="maxMonsterHp" class="form-label">Max HP</label>
-                        <input type="number" id="maxMonsterHp" class="form-control" @bind="_maxHp" min="1"/>
-                    </div>
+                    <MonsterFormFields IdPrefix="monster"
+                                       @bind-Name="_name" @bind-Name:after="OnNameChanged"
+                                       @bind-Description="_description"
+                                       @bind-MaxHp="_maxHp"
+                                       OnNameBlur="OnNameBlur">
+                        <NameSuggestions>
+                            @if (_suggestions.Count > 0)
+                            {
+                                <div class="list-group position-absolute w-100 shadow-sm" style="z-index: 1000;">
+                                    @foreach (var entry in _suggestions)
+                                    {
+                                        <button type="button" class="list-group-item list-group-item-action py-1"
+                                                @onmousedown="() => SelectSuggestion(entry)">
+                                            @entry.Name <span class="text-muted small">(HP @entry.MaxHp)</span>
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        </NameSuggestions>
+                    </MonsterFormFields>
 
                     @if (_isEdit)
                     {
@@ -74,14 +66,7 @@
 
                     <div class="modal-footer">
                         <button class="btn btn-primary" @onclick="HandleSave">
-                            @if (_isEdit)
-                            {
-                                <span>Save</span>
-                            }
-                            else
-                            {
-                                <span>Add</span>
-                            }
+                            @(_isEdit ? "Save" : "Add")
                         </button>
                     </div>
                 </div>
@@ -136,11 +121,10 @@
     // for debouncing
     private CancellationTokenSource? _searchCts;
     private List<BestiaryEntry> _suggestions = new();
-    private async Task OnNameInput(ChangeEventArgs e)
+    
+    private async Task OnNameChanged()
     {
         if (SearchBestiary == null) return;
-        
-        _name = e.Value?.ToString() ?? string.Empty;
         
         _searchCts?.Cancel();
         _searchCts = new CancellationTokenSource();

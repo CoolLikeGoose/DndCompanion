@@ -8,6 +8,7 @@
 @using DndCompanion.Application.Features.Monsters.UpdateMonster
 @using Domain.Entities
 @using Domain.Enums
+@using Web.Components.Pages.Sessions.Game.Master.Cards
 @using Web.Components.Pages.Sessions.Game.Master.Modals
 @using Web.Components.Pages.Sessions.Game.Master.Models
 @using Web.Components.Pages.Sessions.Game.Shared
@@ -72,14 +73,14 @@
     <div class="row g-2">
         @foreach (var monster in _monsters)
         {
-            <div class="col-6">
+            <divчё class="col-6">
                 <MonsterCard
                     Monster="monster"
                     CardClass="@GetCardClass()"
                     OnCardClick="() => OnCardClick(monster)"
                     OnDuplicate="() => HandleMonsterDuplicate(monster)"
                     OnRemove="() => HandleRemoveMonster(monster.Id)"/>
-            </div>
+            </divчё>
         }
 
         <div class="col-6">

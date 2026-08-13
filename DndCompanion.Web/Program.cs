@@ -20,7 +20,9 @@ using DndCompanion.Application.Features.Characters.UpdateInfo;
 using DndCompanion.Application.Features.Characters.UpdateStats;
 using DndCompanion.Application.Features.Monsters.AddBestiaryEntry;
 using DndCompanion.Application.Features.Monsters.AddMonster;
+using DndCompanion.Application.Features.Monsters.RemoveBestiaryEntry;
 using DndCompanion.Application.Features.Monsters.RemoveMonster;
+using DndCompanion.Application.Features.Monsters.UpdateBestiaryEntry;
 using DndCompanion.Application.Features.Monsters.UpdateMonster;
 using DndCompanion.Application.Features.Sessions.CreateSession;
 using DndCompanion.Application.Features.Sessions.JoinSession;
@@ -70,10 +72,13 @@ builder.Services.AddScoped<CreateSessionService>();
 builder.Services.AddScoped<JoinSessionService>();
 
 builder.Services.AddScoped<IBestiaryRepository, BestiaryRepository>();
+builder.Services.AddScoped<AddBestiaryEntryService>();
+builder.Services.AddScoped<RemoveBestiaryEntryService>();
+builder.Services.AddScoped<UpdateBestiaryEntryService>();
+
 builder.Services.AddScoped<AddMonsterService>();
 builder.Services.AddScoped<RemoveMonsterService>();
 builder.Services.AddScoped<UpdateMonsterService>();
-builder.Services.AddScoped<AddBestiaryEntryService>();
 
 // Character
 builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();

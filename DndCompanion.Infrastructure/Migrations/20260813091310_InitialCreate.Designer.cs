@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DndCompanionDbContext))]
-    [Migration("20260811180448_InitialCreate")]
+    [Migration("20260813091310_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -212,6 +212,8 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BestiaryEntryId");
+
                     b.HasIndex("SessionId");
 
                     b.ToTable("Monsters", (string)null);
@@ -372,6 +374,11 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Monster", b =>
                 {
+                    b.HasOne("Domain.Entities.BestiaryEntry", null)
+                        .WithMany()
+                        .HasForeignKey("BestiaryEntryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Domain.Entities.Session", null)
                         .WithMany("Monsters")
                         .HasForeignKey("SessionId")

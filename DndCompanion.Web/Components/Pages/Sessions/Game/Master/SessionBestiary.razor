@@ -1,13 +1,148 @@
 ﻿@page "/sessions/{SessionId:guid}/bestiary"
+@using DndCompanion.Application.Abstractions.Identity
+@using DndCompanion.Application.Abstractions.Persistence
+@using DndCompanion.Application.Features.Monsters.AddBestiaryEntry
+@using DndCompanion.Application.Features.Monsters.UpdateBestiaryEntry
+@using Domain.Entities
 @using Domain.Enums
+@using Web.Components.Pages.Sessions.Game.Master.Cards
 @using Web.Components.Pages.Sessions.Game.Shared
+@using Web.Components.Pages.Sessions.Game.Master.Modals
+@using Web.Components.Pages.Sessions.Game.Master.Models
 
-<h3>SessionBestiary</h3>
+@inject IServiceScopeFactory ScopeFactory
+@inject ICurrentUser CurrentUser
+
+@if (!CurrentUser.IsAuthenticated)
+{
+    <div class="my-3">
+        <h3 class="mb-0">Bestiary</h3>
+        <div class="alert alert-warning mt-3">
+            Please log in to view and manage your bestiary.
+        </div>
+    </div>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center my-3">
+        <h3 class="mb-0">Bestiary</h3>
+        <button class="btn btn-primary" @onclick="() => _modal?.Open()">
+            <i class="bi bi-plus-lg"></i> Add entry
+        </button>
+    </div>
+
+    <div class="mb-3">
+        <input type="text" class="form-control" placeholder="Search by name..."
+               value="@_searchTerm" @oninput="OnSearchInput"/>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="text-muted">Loading...</div>
+    }
+    else if (_filteredEntries.Count == 0)
+    {
+        <div class="text-muted">No bestiary entries found.</div>
+    }
+    else
+    {
+        <div class="d-flex flex-column gap-2">
+            @foreach (var entry in _filteredEntries)
+            {
+                <BestiaryEntryCard 
+                    Entry="entry" 
+                    OnEdit="entry => _modal?.Open(entry)" 
+                    OnRemove="HandleRemove"/>
+            }
+        </div>
+    }
+}
+
+<BestiaryEntryModal @ref="_modal" OnSaved="HandleSaved"/>
 
 <SessionNavBar SessionId="@SessionId" ParticipantId="@ParticipantId" Role="@SessionRole.Master"/>
 
 @code {
     [Parameter] public Guid SessionId { get; set; }
-    [SupplyParameterFromQuery(Name = "participantId")]
-    public Guid ParticipantId { get; set; }
+    [SupplyParameterFromQuery(Name = "participantId")] public Guid ParticipantId { get; set; }
+
+    private BestiaryEntryModal? _modal;
+    private bool _isLoading = true;
+    private string _searchTerm = string.Empty;
+    private List<BestiaryEntry> _allEntries = [];
+    private List<BestiaryEntry> _filteredEntries = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!CurrentUser.IsAuthenticated)
+        {
+            return;
+        }
+        
+        await LoadEntriesAsync();
+    }
+
+    private async Task LoadEntriesAsync()
+    {
+        _isLoading = true;
+
+        if (CurrentUser.UserId is { } masterId)
+        {
+            using var scope = ScopeFactory.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IBestiaryRepository>();
+            _allEntries = await repository.GetBestiaryEntriesAsync(masterId);
+        }
+
+        ApplyFilter();
+        _isLoading = false;
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _searchTerm = e.Value?.ToString() ?? string.Empty;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        _filteredEntries = string.IsNullOrWhiteSpace(_searchTerm)
+            ? _allEntries
+            : _allEntries
+                .Where(x => x.Name.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+    }
+
+    private async Task HandleSaved(BestiaryEntryFormData data)
+    {
+        using var scope = ScopeFactory.CreateScope();
+
+        if (data.IsEdit)
+        {
+            var service = scope.ServiceProvider.GetRequiredService<UpdateBestiaryEntryService>();
+            await service.ExecuteAsync(new UpdateBestiaryEntryCommand(
+                data.BestiaryEntryId!.Value, data.Name, data.MaxHp, data.Description));
+        }
+        else if (CurrentUser.UserId is { } masterId)
+        {
+            var service = scope.ServiceProvider.GetRequiredService<AddBestiaryEntryService>();
+            await service.ExecuteAsync(new AddBestiaryEntryCommand(
+                masterId, data.Name, data.MaxHp, data.Description));
+        }
+
+        await LoadEntriesAsync();
+    }
+
+    private async Task HandleRemove(Guid bestiaryEntryId)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IBestiaryRepository>();
+
+        var entry = await repository.FindByIdAsync(bestiaryEntryId);
+        if (entry is null) return;
+
+        repository.Remove(entry);
+        await repository.SaveChangesAsync();
+
+        await LoadEntriesAsync();
+    }
 }

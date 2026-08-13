@@ -1,0 +1,29 @@
+﻿@using Domain.Entities
+
+<div class="card p-3">
+    <div class="d-flex justify-content-between">
+        <div>
+            <div class="fw-semibold">@Entry.Name</div>
+            @if (!string.IsNullOrWhiteSpace(Entry.Description))
+            {
+                <div class="small text-muted">@Entry.Description</div>
+            }
+            <div class="small text-muted">Max HP: @Entry.MaxHp</div>
+        </div>
+
+        <div class="d-flex gap-1 align-self-start">
+            <button class="btn btn-sm btn-outline-secondary" @onclick="() => OnEdit.InvokeAsync(Entry)">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" @onclick="() => OnRemove.InvokeAsync(Entry.BestiaryEntryId)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public required BestiaryEntry Entry { get; set; }
+    [Parameter] public EventCallback<BestiaryEntry> OnEdit { get; set; }
+    [Parameter] public EventCallback<Guid> OnRemove { get; set; }
+}

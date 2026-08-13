@@ -21,6 +21,12 @@ public class MonsterConfiguration : IEntityTypeConfiguration<Monster>
         builder.Property(x => x.MaxHp)
             .IsRequired();
         
+        builder.HasOne<BestiaryEntry>()
+            .WithMany()
+            .HasForeignKey(m => m.BestiaryEntryId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+        
         builder.HasIndex(x => x.SessionId);
     }
 }

@@ -187,6 +187,12 @@ namespace Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Monsters", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Monsters_BestiaryEntries_BestiaryEntryId",
+                        column: x => x.BestiaryEntryId,
+                        principalTable: "BestiaryEntries",
+                        principalColumn: "BestiaryEntryId",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
                         name: "FK_Monsters_Sessions_SessionId",
                         column: x => x.SessionId,
                         principalTable: "Sessions",
@@ -240,6 +246,11 @@ namespace Infrastructure.Migrations
                 column: "CharacterId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Monsters_BestiaryEntryId",
+                table: "Monsters",
+                column: "BestiaryEntryId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Monsters_SessionId",
                 table: "Monsters",
                 column: "SessionId");
@@ -276,9 +287,6 @@ namespace Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "BestiaryEntries");
-
-            migrationBuilder.DropTable(
                 name: "CharacterInfos");
 
             migrationBuilder.DropTable(
@@ -298,6 +306,9 @@ namespace Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "BestiaryEntries");
 
             migrationBuilder.DropTable(
                 name: "Characters");

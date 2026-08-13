@@ -1,0 +1,46 @@
+﻿<div class="mb-3 position-relative">
+    <label for="@($"{IdPrefix}-name")" class="form-label">Name</label>
+    <input type="text" id="@($"{IdPrefix}-name")" class="form-control" autocomplete="off"
+           value="@Name" @oninput="OnNameInput" @onblur="() => OnNameBlur.InvokeAsync()"/>
+    @NameSuggestions
+</div>
+
+<div class="mb-3">
+    <label for="@($"{IdPrefix}-description")" class="form-label">Description</label>
+    <input type="text" id="@($"{IdPrefix}-description")" class="form-control"
+           value="@Description" @oninput="OnDescriptionInput"/>
+</div>
+
+<div class="mb-3">
+    <label for="@($"{IdPrefix}-maxhp")" class="form-label">Max HP</label>
+    <input type="number" id="@($"{IdPrefix}-maxhp")" class="form-control" min="1"
+           value="@MaxHp" @oninput="OnMaxHpInput"/>
+</div>
+
+@code {
+    [Parameter] public string IdPrefix { get; set; } = "form";
+
+    [Parameter] public string Name { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> NameChanged { get; set; }
+
+    [Parameter] public string Description { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> DescriptionChanged { get; set; }
+
+    [Parameter] public int MaxHp { get; set; } = 1;
+    [Parameter] public EventCallback<int> MaxHpChanged { get; set; }
+
+    // For monster's autocomplete suggestions
+    [Parameter] public RenderFragment? NameSuggestions { get; set; }
+    [Parameter] public EventCallback OnNameBlur { get; set; }
+
+    private Task OnNameInput(ChangeEventArgs e) =>
+        NameChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty);
+
+    private Task OnDescriptionInput(ChangeEventArgs e) =>
+        DescriptionChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty);
+
+    private Task OnMaxHpInput(ChangeEventArgs e) =>
+        int.TryParse(e.Value?.ToString(), out var value)
+            ? MaxHpChanged.InvokeAsync(value)
+            : Task.CompletedTask;
+}

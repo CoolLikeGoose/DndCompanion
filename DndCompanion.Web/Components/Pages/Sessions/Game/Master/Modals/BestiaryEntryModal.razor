@@ -1,0 +1,75 @@
+﻿@using Domain.Entities
+@using Web.Components.Pages.Sessions.Game.Master.Models
+@using Web.Components.Pages.Sessions.Game.Shared
+
+@if (_modalOpen)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(_isEdit ? "Edit bestiary entry" : "Add bestiary entry")</h5>
+                    <button type="button" class="btn-close" @onclick="() => _modalOpen = false"></button>
+                </div>
+
+                <div class="modal-body">
+                    <MonsterFormFields IdPrefix="bestiary"
+                                       @bind-Name="_name"
+                                       @bind-Description="_description"
+                                       @bind-MaxHp="_maxHp"/>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" @onclick="HandleSave">
+                            @(_isEdit ? "Save" : "Add")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public EventCallback<BestiaryEntryFormData> OnSaved { get; set; }
+
+    private bool _modalOpen;
+    private bool _isEdit;
+    
+    private Guid? _bestiaryEntryId;
+    private string _name = string.Empty;
+    private string _description = string.Empty;
+    private int _maxHp = 1;
+
+    public void Open()
+    {
+        _bestiaryEntryId = null;
+        _name = string.Empty;
+        _description = string.Empty;
+        _maxHp = 1;
+        _isEdit = false;
+        _modalOpen = true;
+    }
+
+    public void Open(BestiaryEntry entry)
+    {
+        _bestiaryEntryId = entry.BestiaryEntryId;
+        _name = entry.Name;
+        _description = entry.Description ?? string.Empty;
+        _maxHp = entry.MaxHp;
+        _isEdit = true;
+        _modalOpen = true;
+    }
+
+    private void HandleSave()
+    {
+        if (string.IsNullOrWhiteSpace(_name)) return;
+
+        OnSaved.InvokeAsync(new BestiaryEntryFormData(
+            _name, _maxHp,
+            string.IsNullOrWhiteSpace(_description) ? null : _description,
+            _isEdit, _bestiaryEntryId));
+        _modalOpen = false;
+    }
+}
