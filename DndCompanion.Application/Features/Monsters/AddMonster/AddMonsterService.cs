@@ -44,7 +44,8 @@ public class AddMonsterService
                 command.Name,
                 command.MaxHitPoints,
                 command.Description,
-                bestiaryEntryResult?.BestiaryEntryId);
+                bestiaryEntryResult?.BestiaryEntryId,
+                command.BattleId);
             
             // saves twice per operation if addBestiaryEntry is called, but this is acceptable for now
             await _sessionRepository.SaveChangesAsync(cancellationToken);

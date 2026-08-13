@@ -55,6 +55,7 @@ public sealed class SessionRepository : ISessionRepository
     {
         return _dbContext.Sessions
             .Include(x => x.Monsters)
+            .Include(x => x.Battles)
             .FirstOrDefaultAsync(x => x.Id == sessionId, cancellationToken);
     }
 
