@@ -105,20 +105,31 @@
                     </button>
                 }
             </div>
-
+            
+            @{
+                var orderedMonsters = _monsters
+                    .Where(m => m.BattleId == battle.BattleId)
+                    .OrderBy(m => m.CreatedAt)
+                    .ToList();
+            }
+            
             <div class="row g-2">
-                @foreach (var monster in _monsters.Where(m => m.BattleId == battle.BattleId))
+                @for (var i = 0; i < orderedMonsters.Count; i++)
                 {
+                    var monster = orderedMonsters[i];
+                    var number = i + 1;
+
                     <div class="col-6">
                         <MonsterCard
                             Monster="monster"
+                            Number="number"
                             CardClass="@GetCardClass()"
                             OnCardClick="() => OnCardClick(monster)"
                             OnDuplicate="() => HandleMonsterDuplicate(monster)"
                             OnRemove="() => HandleRemoveMonster(monster.Id)"/>
                     </div>
                 }
-
+                
                 <div class="col-6">
                     <button class="btn btn-outline-secondary w-100 h-100" style="min-height: 80px;"
                             @onclick="() => _editMonsterModal.Open(battle.BattleId)">

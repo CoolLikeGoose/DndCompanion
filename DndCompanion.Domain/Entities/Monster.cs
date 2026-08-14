@@ -15,6 +15,7 @@ public class Monster
     public int CurrentHp { get; private set; }
     public int MaxHp { get; private set; }
     public string? Description { get; private set; }
+    public DateTime CreatedAt { get; private set; }
 
     public static Monster Create(Guid sessionId, string name, int maxHp, Guid battleId, string? description = null, Guid? bestiaryEntryId = null)
     {
@@ -36,6 +37,7 @@ public class Monster
             MaxHp = maxHp,
             CurrentHp = maxHp,
             Description = description,
+            CreatedAt = DateTime.UtcNow,
             BestiaryEntryId = bestiaryEntryId,
             BattleId = battleId
         };

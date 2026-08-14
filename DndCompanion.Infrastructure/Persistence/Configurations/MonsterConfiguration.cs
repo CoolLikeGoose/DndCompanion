@@ -33,6 +33,8 @@ public class MonsterConfiguration : IEntityTypeConfiguration<Monster>
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
         
+        builder.Property(m => m.CreatedAt).IsRequired();
+        
         builder.HasIndex(x => x.SessionId);
     }
 }

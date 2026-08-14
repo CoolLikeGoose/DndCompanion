@@ -213,6 +213,9 @@ namespace Infrastructure.Migrations
                     b.Property<Guid?>("BestiaryEntryId")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("CurrentHp")
                         .HasColumnType("INTEGER");
 
