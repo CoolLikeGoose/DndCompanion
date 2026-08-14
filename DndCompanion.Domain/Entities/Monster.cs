@@ -16,7 +16,7 @@ public class Monster
     public int MaxHp { get; private set; }
     public string? Description { get; private set; }
 
-    public static Monster Create(Guid sessionId, string name, int maxHp, string? description = null, Guid? bestiaryEntryId = null)
+    public static Monster Create(Guid sessionId, string name, int maxHp, Guid battleId, string? description = null, Guid? bestiaryEntryId = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Name is required", nameof(name));
@@ -36,7 +36,8 @@ public class Monster
             MaxHp = maxHp,
             CurrentHp = maxHp,
             Description = description,
-            BestiaryEntryId = bestiaryEntryId
+            BestiaryEntryId = bestiaryEntryId,
+            BattleId = battleId
         };
 
         return monster;

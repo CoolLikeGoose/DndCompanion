@@ -8,4 +8,5 @@ public sealed record MonsterFormData(
     bool IsEdit,
     Guid? MonsterId = null,
     Guid? BestiaryEntryId = null,
-    bool SaveToBestiary = false);
+    bool SaveToBestiary = false,
+    Guid BattleId = default);

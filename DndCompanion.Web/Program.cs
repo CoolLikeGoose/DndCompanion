@@ -24,8 +24,11 @@ using DndCompanion.Application.Features.Monsters.RemoveBestiaryEntry;
 using DndCompanion.Application.Features.Monsters.RemoveMonster;
 using DndCompanion.Application.Features.Monsters.UpdateBestiaryEntry;
 using DndCompanion.Application.Features.Monsters.UpdateMonster;
+using DndCompanion.Application.Features.Sessions.AddBattle;
 using DndCompanion.Application.Features.Sessions.CreateSession;
 using DndCompanion.Application.Features.Sessions.JoinSession;
+using DndCompanion.Application.Features.Sessions.RemoveBattle;
+using DndCompanion.Application.Features.Sessions.RenameBattle;
 using Infrastructure.Identity;
 using Infrastructure.Persistence;
 using Infrastructure.Repositories;
@@ -75,6 +78,10 @@ builder.Services.AddScoped<IBestiaryRepository, BestiaryRepository>();
 builder.Services.AddScoped<AddBestiaryEntryService>();
 builder.Services.AddScoped<RemoveBestiaryEntryService>();
 builder.Services.AddScoped<UpdateBestiaryEntryService>();
+
+builder.Services.AddScoped<AddBattleService>();
+builder.Services.AddScoped<RemoveBattleService>();
+builder.Services.AddScoped<RenameBattleService>();
 
 builder.Services.AddScoped<AddMonsterService>();
 builder.Services.AddScoped<RemoveMonsterService>();

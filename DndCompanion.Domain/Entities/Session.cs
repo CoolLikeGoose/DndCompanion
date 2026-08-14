@@ -72,7 +72,7 @@ public class Session
             throw new ArgumentException($"Battle {resolvedBattleId} not found in this session.", nameof(battleId));
 
 
-        var monster = Monster.Create(Id, name, maxHp, description, bestiaryEntryId);
+        var monster = Monster.Create(Id, name, maxHp, resolvedBattleId, description, bestiaryEntryId);
         _monsters.Add(monster);
         return monster;
     }

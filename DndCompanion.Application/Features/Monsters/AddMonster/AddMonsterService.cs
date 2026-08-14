@@ -12,11 +12,11 @@ public class AddMonsterService
 
     public AddMonsterService(ISessionRepository sessionRepository,
         AddBestiaryEntryService addBestiaryEntryService,
-        ICurrentUser CurrentUser)
+        ICurrentUser currentUser)
     {
         _sessionRepository = sessionRepository;
         _addBestiaryEntryService = addBestiaryEntryService;
-        _currentUser = CurrentUser;
+        _currentUser = currentUser;
     }
 
     public async Task<AddMonsterResult> ExecuteAsync(

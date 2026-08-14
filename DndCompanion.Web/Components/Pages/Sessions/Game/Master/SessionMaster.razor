@@ -6,6 +6,9 @@
 @using DndCompanion.Application.Features.Monsters.AddMonster
 @using DndCompanion.Application.Features.Monsters.RemoveMonster
 @using DndCompanion.Application.Features.Monsters.UpdateMonster
+@using DndCompanion.Application.Features.Sessions.AddBattle
+@using DndCompanion.Application.Features.Sessions.RemoveBattle
+@using DndCompanion.Application.Features.Sessions.RenameBattle
 @using Domain.Entities
 @using Domain.Enums
 @using Web.Components.Pages.Sessions.Game.Master.Cards
@@ -69,27 +72,62 @@
         }
     </div>
 
-    <h3 class="mb-2 mt-4">Monsters</h3>
-    <div class="row g-2">
-        @foreach (var monster in _monsters)
-        {
-            <divчё class="col-6">
-                <MonsterCard
-                    Monster="monster"
-                    CardClass="@GetCardClass()"
-                    OnCardClick="() => OnCardClick(monster)"
-                    OnDuplicate="() => HandleMonsterDuplicate(monster)"
-                    OnRemove="() => HandleRemoveMonster(monster.Id)"/>
-            </divчё>
-        }
-
-        <div class="col-6">
-            <button class="btn btn-outline-secondary w-100 h-100" style="min-height: 80px;"
-                    @onclick="() => _editMonsterModal.Open()">
-                + Add monster
-            </button>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+        <h3 class="mb-0">Battles</h3>
+        <button class="btn btn-outline-primary btn-sm" @onclick="HandleAddBattle">
+            + Add battle
+        </button>
     </div>
+
+    @foreach (var battle in _battles)
+    {
+        <div class="mb-3">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                @if (_editingBattleId == battle.BattleId)
+                {
+                    <input class="form-control form-control-sm w-auto" style="max-width: 220px;"
+                           @bind="_editingBattleName" @bind:event="oninput"
+                           @onblur="() => SaveBattleName(battle.BattleId)"
+                           @onkeydown="@(e => e.Key == "Enter" ? SaveBattleName(battle.BattleId) : Task.CompletedTask)"
+                           autofocus/>
+                }
+                else
+                {
+                    <h5 class="mb-0" role="button" @onclick="() => StartEditBattleName(battle)">
+                        @battle.Name
+                    </h5>
+                }
+
+                @if (battle.BattleId != _defaultBattleId)
+                {
+                    <button class="btn btn-sm btn-outline-danger" @onclick="() => HandleRemoveBattle(battle.BattleId)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                }
+            </div>
+
+            <div class="row g-2">
+                @foreach (var monster in _monsters.Where(m => m.BattleId == battle.BattleId))
+                {
+                    <div class="col-6">
+                        <MonsterCard
+                            Monster="monster"
+                            CardClass="@GetCardClass()"
+                            OnCardClick="() => OnCardClick(monster)"
+                            OnDuplicate="() => HandleMonsterDuplicate(monster)"
+                            OnRemove="() => HandleRemoveMonster(monster.Id)"/>
+                    </div>
+                }
+
+                <div class="col-6">
+                    <button class="btn btn-outline-secondary w-100 h-100" style="min-height: 80px;"
+                            @onclick="() => _editMonsterModal.Open(battle.BattleId)">
+                        + Add monster
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
 <div style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1000;">
@@ -125,8 +163,8 @@
 
 <GiveItemModal @ref="_giveItemModal" SessionId="@SessionId" OnSaved="HandleSaved"/>
 
-<EditMonsterModal @ref="_editMonsterModal" 
-                  OnSaved="HandleMonsterSave" 
+<EditMonsterModal @ref="_editMonsterModal"
+                  OnSaved="HandleMonsterSave"
                   IsAuthenticated="@CurrentUser.IsAuthenticated"
                   SearchBestiary="SearchBestiaryEntries"/>
 
@@ -141,14 +179,14 @@
     private bool _isBusy = false;
     private string? _resourceError = null;
     private List<SessionParticipant> _participants = new();
-    
+
     protected override async Task OnInitializedAsync()
     {
         await LoadParticipantsAsync();
         await LoadMonstersAsync();
         SessionNotificationService.Subscribe(SessionId, OnSessionUpdated);
     }
-    
+
     private async Task LoadParticipantsAsync()
     {
         using var scope = ScopeFactory.CreateScope();
@@ -281,6 +319,7 @@
 
     // Monsters
     private List<Monster> _monsters = new();
+    private List<Battle> _battles = [];
     private EditMonsterModal _editMonsterModal = null!;
 
     private async Task LoadMonstersAsync()
@@ -288,7 +327,11 @@
         using var scope = ScopeFactory.CreateScope();
         var repo = scope.ServiceProvider.GetRequiredService<ISessionRepository>();
         var session = await repo.FindByIdWithMonstersAsync(SessionId);
+
         _monsters = session?.Monsters.ToList() ?? new();
+        _battles = session?.Battles.ToList() ?? [];
+        _defaultBattleId = session?.DefaultBattleId ?? Guid.Empty;
+
         await InvokeAsync(StateHasChanged);
     }
 
@@ -309,13 +352,22 @@
         else
         {
             var service = scope.ServiceProvider.GetRequiredService<AddMonsterService>();
-            await service.ExecuteAsync(new AddMonsterCommand(
+            var result = await service.ExecuteAsync(new AddMonsterCommand(
                 SessionId,
                 monsterData.Name,
                 monsterData.MaxHp,
                 monsterData.Description,
-                monsterData.SaveToBestiary));
+                monsterData.SaveToBestiary,
+                monsterData.BattleId));
+
+            if (!result.IsSuccess)
+            {
+                _resourceError = result.ErrorMessage;
+                return;
+            }
         }
+        
+        _resourceError = null;
 
         await LoadMonstersAsync();
     }
@@ -335,7 +387,7 @@
         await service.ExecuteAsync(new AddMonsterCommand(SessionId, monster.Name, monster.MaxHp, monster.Description));
         await LoadMonstersAsync();
     }
-    
+
     private async Task<List<BestiaryEntry>> SearchBestiaryEntries(string prefix, CancellationToken ct)
     {
         if (CurrentUser.UserId is not { } masterId || string.IsNullOrWhiteSpace(prefix))
@@ -345,6 +397,44 @@
         var repository = scope.ServiceProvider.GetRequiredService<IBestiaryRepository>();
         return await repository.SearchBestiaryEntriesAsync(masterId, prefix, limit: 5, ct);
     }
+
+    // Monsters > Battles
+    private Guid _defaultBattleId;
+    private Guid? _editingBattleId;
+    private string _editingBattleName = string.Empty;
+    
+    private async Task HandleAddBattle()
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<AddBattleService>();
+        await service.ExecuteAsync(new AddBattleCommand(SessionId, "New battle"));
+        await LoadMonstersAsync();
+    }
+
+    private async Task HandleRemoveBattle(Guid battleId)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<RemoveBattleService>();
+        await service.ExecuteAsync(new RemoveBattleCommand(SessionId, battleId));
+        await LoadMonstersAsync();
+    }
+    
+    private void StartEditBattleName(Battle battle)
+    {
+        _editingBattleId = battle.BattleId;
+        _editingBattleName = battle.Name;
+    }
+    
+    private async Task SaveBattleName(Guid battleId)
+    {
+        _editingBattleId = null;
+
+        using var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<RenameBattleService>();
+        await service.ExecuteAsync(new RenameBattleCommand(SessionId, battleId, _editingBattleName));
+        await LoadMonstersAsync();
+    }
+    
 
     public void Dispose()
     {
