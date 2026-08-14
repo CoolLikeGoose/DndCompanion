@@ -40,6 +40,34 @@ public class MonsterTests
             Assert.Equal("Test Monster", monster.Name);
         }
     }
+    
+    public class AddMonsterWithBattle
+    {
+        [Fact]
+        public void AssignsDefaultBattle_WhenBattleIdNotProvided()
+        {
+            var session = CreateSession();
+            var monster = session.AddMonster("Test Monster", 10);
+            Assert.Equal(session.DefaultBattleId, monster.BattleId);
+        }
+
+        [Fact]
+        public void AssignsGivenBattle_WhenBattleIdProvided()
+        {
+            var session = CreateSession();
+            var battle = session.AddBattle("Boss Fight");
+            var monster = session.AddMonster("Test Monster", 10, battleId: battle.BattleId);
+            Assert.Equal(battle.BattleId, monster.BattleId);
+        }
+
+        [Fact]
+        public void Throws_WhenBattleIdNotFoundInSession()
+        {
+            var session = CreateSession();
+            Assert.Throws<ArgumentException>(() =>
+                session.AddMonster("Test Monster", 10, battleId: Guid.NewGuid()));
+        }
+    }
 
     public class UpdateMonster
     {
