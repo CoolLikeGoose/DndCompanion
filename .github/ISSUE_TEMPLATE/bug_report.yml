@@ -31,8 +31,6 @@ body:
     id: actual
     attributes:
       label: Current behavior
-    validations:
-      required: true
   - type: textarea
     id: proposed
     attributes:
