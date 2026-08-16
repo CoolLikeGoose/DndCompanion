@@ -4,11 +4,14 @@
 @using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestParty
 @using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource
 @using DndCompanion.Application.Features.Monsters.AddMonster
+@using DndCompanion.Application.Features.Monsters.MoveMonsterToBattle
 @using DndCompanion.Application.Features.Monsters.RemoveMonster
+@using DndCompanion.Application.Features.Monsters.ReorderMonster
 @using DndCompanion.Application.Features.Monsters.UpdateMonster
 @using DndCompanion.Application.Features.Sessions.AddBattle
 @using DndCompanion.Application.Features.Sessions.RemoveBattle
 @using DndCompanion.Application.Features.Sessions.RenameBattle
+@using DndCompanion.Application.Features.Sessions.ReorderBattle
 @using Domain.Entities
 @using Domain.Enums
 @using Web.Components.Pages.Sessions.Game.Master.Cards
@@ -17,6 +20,7 @@
 @using Web.Components.Pages.Sessions.Game.Shared
 
 @inject IServiceScopeFactory ScopeFactory
+@inject IJSRuntime JsRuntime
 
 @inject ICurrentUser CurrentUser
 @inject SessionNotificationService SessionNotificationService
@@ -79,69 +83,73 @@
         </button>
     </div>
 
-    @foreach (var battle in _battles)
-    {
-        <div class="mb-3">
-            <div class="d-flex align-items-center gap-2 mb-2">
-                @if (_editingBattleId == battle.BattleId)
-                {
-                    <input class="form-control form-control-sm w-auto" style="max-width: 220px;"
-                           @bind="_editingBattleName" @bind:event="oninput"
-                           @onblur="() => SaveBattleName(battle.BattleId)"
-                           @onkeydown="@(async (KeyboardEventArgs e)  =>
-                                       {
-                                           if (e.Key == "Enter") await SaveBattleName(battle.BattleId);
-                                       })"
-                           autofocus/>
-                }
-                else
-                {
-                    <h5 class="mb-0" role="button" @onclick="() => StartEditBattleName(battle)">
-                        @battle.Name
-                    </h5>
+    <div id="battle-container">
+        @foreach (var battle in _battles.OrderBy(b => b.Order))
+        {
+            <div class="mb-3" data-battle-id-value="@battle.BattleId" @key="battle.BattleId">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-grip-vertical battle-drag-handle" style="cursor: grab;"></i>
+                    @if (_editingBattleId == battle.BattleId)
+                    {
+                        <input class="form-control form-control-sm w-auto" style="max-width: 220px;"
+                               @bind="_editingBattleName" @bind:event="oninput"
+                               @onblur="() => SaveBattleName(battle.BattleId)"
+                               @onkeydown="@(async (KeyboardEventArgs e) =>
+                                           {
+                                               if (e.Key == "Enter") await SaveBattleName(battle.BattleId);
+                                           })"
+                               autofocus/>
+                    }
+                    else
+                    {
+                        <h5 class="mb-0" role="button" @onclick="() => StartEditBattleName(battle)">
+                            @battle.Name
+                        </h5>
+                    }
+
+                    @if (battle.BattleId != _defaultBattleId)
+                    {
+                        <button class="btn btn-sm btn-outline-danger"
+                                @onclick="() => HandleRemoveBattle(battle.BattleId)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    }
+                </div>
+
+                @{
+                    var orderedMonsters = _monsters
+                        .Where(m => m.BattleId == battle.BattleId)
+                        .OrderBy(m => m.Order)
+                        .ToList();
                 }
 
-                @if (battle.BattleId != _defaultBattleId)
-                {
-                    <button class="btn btn-sm btn-outline-danger" @onclick="() => HandleRemoveBattle(battle.BattleId)">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                }
-            </div>
-            
-            @{
-                var orderedMonsters = _monsters
-                    .Where(m => m.BattleId == battle.BattleId)
-                    .OrderBy(m => m.CreatedAt)
-                    .ToList();
-            }
-            
-            <div class="row g-2">
-                @for (var i = 0; i < orderedMonsters.Count; i++)
-                {
-                    var monster = orderedMonsters[i];
-                    var number = i + 1;
+                <div class="row g-2" id="monster-container-@battle.BattleId" data-battle-id="@battle.BattleId">
+                    @for (var i = 0; i < orderedMonsters.Count; i++)
+                    {
+                        var monster = orderedMonsters[i];
 
+                        <div class="col-6" data-monster-id="@monster.Id" @key="monster.Id">
+                            <MonsterCard
+                                Monster="monster"
+                                Number="@(i + 1)"
+                                CardClass="@GetCardClass()"
+                                OnCardClick="() => OnCardClick(monster)"
+                                OnDuplicate="() => HandleMonsterDuplicate(monster)"
+                                OnRemove="() => HandleRemoveMonster(monster.Id)"/>
+                        </div>
+                    }
+                </div>
+                <div class="row mt-2">
                     <div class="col-6">
-                        <MonsterCard
-                            Monster="monster"
-                            Number="number"
-                            CardClass="@GetCardClass()"
-                            OnCardClick="() => OnCardClick(monster)"
-                            OnDuplicate="() => HandleMonsterDuplicate(monster)"
-                            OnRemove="() => HandleRemoveMonster(monster.Id)"/>
+                        <button class="btn btn-outline-secondary w-100 h-100" style="min-height: 80px;"
+                                @onclick="() => _editMonsterModal.Open(battle.BattleId)">
+                            + Add monster
+                        </button>
                     </div>
-                }
-                
-                <div class="col-6">
-                    <button class="btn btn-outline-secondary w-100 h-100" style="min-height: 80px;"
-                            @onclick="() => _editMonsterModal.Open(battle.BattleId)">
-                        + Add monster
-                    </button>
                 </div>
             </div>
-        </div>
-    }
+        }
+    </div>
 </div>
 
 <div style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1000;">
@@ -380,7 +388,7 @@
                 return;
             }
         }
-        
+
         _resourceError = null;
 
         await LoadMonstersAsync();
@@ -416,7 +424,7 @@
     private Guid _defaultBattleId;
     private Guid? _editingBattleId;
     private string _editingBattleName = string.Empty;
-    
+
     private async Task HandleAddBattle()
     {
         using var scope = ScopeFactory.CreateScope();
@@ -432,13 +440,13 @@
         await service.ExecuteAsync(new RemoveBattleCommand(SessionId, battleId));
         await LoadMonstersAsync();
     }
-    
+
     private void StartEditBattleName(Battle battle)
     {
         _editingBattleId = battle.BattleId;
         _editingBattleName = battle.Name;
     }
-    
+
     private async Task SaveBattleName(Guid battleId)
     {
         _editingBattleId = null;
@@ -448,11 +456,96 @@
         await service.ExecuteAsync(new RenameBattleCommand(SessionId, battleId, _editingBattleName));
         await LoadMonstersAsync();
     }
-    
+
+    // Drag-n-Drop
+    private DotNetObjectReference<SessionMaster>? _dotNetRef;
+    private readonly HashSet<string> _initializedContainers = [];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+        }
+
+        foreach (var battle in _battles)
+        {
+            var containerId = $"monster-container-{battle.BattleId}";
+            if (_initializedContainers.Add(containerId))
+            {
+                await JsRuntime.InvokeVoidAsync("sortableInterop.initMonsterSortable", containerId, _dotNetRef);
+            }
+        }
+
+        if (_initializedContainers.Add("battle-container"))
+        {
+            await JsRuntime.InvokeVoidAsync("sortableInterop.initBattleSortable", "battle-container", _dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnMonsterReordered(Guid monsterId, Guid targetBattleId, int newIndex)
+    {
+        var targetBattleMonsters = _monsters
+            .Where(m => m.BattleId == targetBattleId && m.Id != monsterId)
+            .OrderBy(m => m.Order)
+            .ToList();
+
+        var newOrder = CalculateMonsterOrder(targetBattleMonsters, newIndex);
+        var monster = _monsters.First(m => m.Id == monsterId);
+
+        using var scope = ScopeFactory.CreateScope();
+
+        if (monster.BattleId == targetBattleId)
+        {
+            var service = scope.ServiceProvider.GetRequiredService<ReorderMonsterService>();
+            var result = await service.ExecuteAsync(new ReorderMonsterCommand(SessionId, monsterId, newOrder));
+            if (!result.IsSuccess) _resourceError = result.ErrorMessage;
+        }
+        else
+        {
+            var service = scope.ServiceProvider.GetRequiredService<MoveMonsterToBattleService>();
+            var result = await service.ExecuteAsync(new MoveMonsterToBattleCommand(SessionId, monsterId, targetBattleId, newOrder));
+            if (!result.IsSuccess) _resourceError = result.ErrorMessage;
+        }
+
+        await LoadMonstersAsync();
+    }
+
+    [JSInvokable]
+    public async Task OnBattleReordered(Guid battleId, int newIndex)
+    {
+        var otherBattles = _battles.Where(b => b.BattleId != battleId).OrderBy(b => b.Order).ToList();
+        var newOrder = CalculateBattleOrder(otherBattles, newIndex);
+
+        using var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<ReorderBattleService>();
+        var result = await service.ExecuteAsync(new ReorderBattleCommand(SessionId, battleId, newOrder));
+        if (!result.IsSuccess) _resourceError = result.ErrorMessage;
+
+        await LoadMonstersAsync();
+    }
+
+    private static double CalculateMonsterOrder(List<Monster> siblings, int newIndex)
+    {
+        if (siblings.Count == 0) return 1000;
+        if (newIndex <= 0) return siblings[0].Order - 1000;
+        if (newIndex >= siblings.Count) return siblings[^1].Order + 1000;
+        return (siblings[newIndex - 1].Order + siblings[newIndex].Order) / 2;
+    }
+
+    private static double CalculateBattleOrder(List<Battle> siblings, int newIndex)
+    {
+        if (siblings.Count == 0) return 1000;
+        if (newIndex <= 0) return siblings[0].Order - 1000;
+        if (newIndex >= siblings.Count) return siblings[^1].Order + 1000;
+        return (siblings[newIndex - 1].Order + siblings[newIndex].Order) / 2;
+    }
 
     public void Dispose()
     {
         SessionNotificationService.Unsubscribe(SessionId, OnSessionUpdated);
+        _dotNetRef?.Dispose();
     }
 
 }
