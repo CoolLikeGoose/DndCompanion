@@ -35,6 +35,8 @@ public class MonsterConfiguration : IEntityTypeConfiguration<Monster>
         
         builder.Property(m => m.CreatedAt).IsRequired();
         
+        builder.Property(m => m.Order).IsRequired();
+        
         builder.HasIndex(x => x.SessionId);
     }
 }

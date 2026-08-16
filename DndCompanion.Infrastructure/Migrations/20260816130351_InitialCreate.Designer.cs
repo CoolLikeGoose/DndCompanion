@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DndCompanionDbContext))]
-    [Migration("20260814212000_InitialCreate")]
+    [Migration("20260816130351_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -29,6 +29,9 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<double>("Order")
+                        .HasColumnType("REAL");
 
                     b.Property<Guid>("SessionId")
                         .HasColumnType("TEXT");
@@ -232,6 +235,9 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<double>("Order")
+                        .HasColumnType("REAL");
 
                     b.Property<Guid>("SessionId")
                         .HasColumnType("TEXT");

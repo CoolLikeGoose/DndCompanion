@@ -14,6 +14,8 @@ public class BattleConfiguration : IEntityTypeConfiguration<Battle>
         builder.Property(b => b.BattleId).ValueGeneratedNever();
 
         builder.Property(b => b.Name).HasMaxLength(100).IsRequired();
+        
+        builder.Property(b => b.Order).IsRequired();
 
         builder.HasOne<Session>()
             .WithMany(s => s.Battles)

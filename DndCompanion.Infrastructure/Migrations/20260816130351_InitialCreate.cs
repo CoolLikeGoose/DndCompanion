@@ -178,6 +178,7 @@ namespace Infrastructure.Migrations
                 {
                     BattleId = table.Column<Guid>(type: "TEXT", nullable: false),
                     SessionId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Order = table.Column<double>(type: "REAL", nullable: false),
                     Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false)
                 },
                 constraints: table =>
@@ -228,6 +229,7 @@ namespace Infrastructure.Migrations
                     SessionId = table.Column<Guid>(type: "TEXT", nullable: false),
                     BestiaryEntryId = table.Column<Guid>(type: "TEXT", nullable: true),
                     BattleId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Order = table.Column<double>(type: "REAL", nullable: false),
                     Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     CurrentHp = table.Column<int>(type: "INTEGER", nullable: false),
                     MaxHp = table.Column<int>(type: "INTEGER", nullable: false),

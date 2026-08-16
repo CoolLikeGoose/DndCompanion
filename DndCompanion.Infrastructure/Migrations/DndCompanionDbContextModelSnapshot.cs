@@ -27,6 +27,9 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<double>("Order")
+                        .HasColumnType("REAL");
+
                     b.Property<Guid>("SessionId")
                         .HasColumnType("TEXT");
 
@@ -229,6 +232,9 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<double>("Order")
+                        .HasColumnType("REAL");
 
                     b.Property<Guid>("SessionId")
                         .HasColumnType("TEXT");

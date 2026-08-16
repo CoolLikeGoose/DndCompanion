@@ -88,7 +88,10 @@
                     <input class="form-control form-control-sm w-auto" style="max-width: 220px;"
                            @bind="_editingBattleName" @bind:event="oninput"
                            @onblur="() => SaveBattleName(battle.BattleId)"
-                           @onkeydown="@(e => e.Key == "Enter" ? SaveBattleName(battle.BattleId) : Task.CompletedTask)"
+                           @onkeydown="@(async (KeyboardEventArgs e)  =>
+                                       {
+                                           if (e.Key == "Enter") await SaveBattleName(battle.BattleId);
+                                       })"
                            autofocus/>
                 }
                 else

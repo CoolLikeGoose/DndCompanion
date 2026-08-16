@@ -38,7 +38,7 @@ public class Session
             masterDisplayName,
             SessionRole.Master);
 
-        var defaultBattle = Battle.Create(session.Id, "Other monsters");
+        var defaultBattle = Battle.Create(session.Id, "Other monsters", 0);
         session._battles.Add(defaultBattle);
         session.DefaultBattleId = defaultBattle.BattleId;
 
@@ -70,9 +70,13 @@ public class Session
         var resolvedBattleId = battleId ?? DefaultBattleId;
         if (_battles.All(b => b.BattleId != resolvedBattleId))
             throw new ArgumentException($"Battle {resolvedBattleId} not found in this session.", nameof(battleId));
+        
+        var maxOrder = _monsters
+            .Where(m => m.BattleId == resolvedBattleId)
+            .Select(m => (double?)m.Order)
+            .Max() ?? 0;
 
-
-        var monster = Monster.Create(Id, name, maxHp, resolvedBattleId, description, bestiaryEntryId);
+        var monster = Monster.Create(Id, name, maxHp, resolvedBattleId, description, bestiaryEntryId, maxOrder + 1000);
         _monsters.Add(monster);
         return monster;
     }
@@ -98,6 +102,15 @@ public class Session
 
         monster.Update(name, maxHp, currentHp, description);
     }
+    
+    public void ReorderMonster(Guid monsterId, double newOrder)
+    {
+        var monster = _monsters.FirstOrDefault(m => m.Id == monsterId);
+        if (monster is null)
+            throw new ArgumentException($"Monster with id {monsterId} not found for this session.", nameof(monsterId));
+
+        monster.SetOrder(newOrder);
+    }
 
     // Battles
     public Guid DefaultBattleId { get; private set; }
@@ -106,7 +119,11 @@ public class Session
 
     public Battle AddBattle(string name)
     {
-        var battle = Battle.Create(Id, name);
+        var maxOrder = _battles
+            .Select(b => (double?)b.Order)
+            .Max() ?? 0;
+        
+        var battle = Battle.Create(Id, name, maxOrder + 1000);
         _battles.Add(battle);
         return battle;
     }
@@ -121,5 +138,26 @@ public class Session
             throw new ArgumentException($"Battle {battleId} not found.", nameof(battleId));
 
         _battles.Remove(battle);
+    }
+    
+    public void ReorderBattle(Guid battleId, double newOrder)
+    {
+        var battle = _battles.FirstOrDefault(b => b.BattleId == battleId);
+        if (battle is null)
+            throw new ArgumentException($"Battle {battleId} not found.", nameof(battleId));
+
+        battle.SetOrder(newOrder);
+    }
+    
+    public void MoveMonsterToBattle(Guid monsterId, Guid targetBattleId, double newOrder)
+    {
+        if (_battles.All(b => b.BattleId != targetBattleId))
+            throw new ArgumentException($"Battle {targetBattleId} not found in this session.", nameof(targetBattleId));
+
+        var monster = _monsters.FirstOrDefault(m => m.Id == monsterId);
+        if (monster is null)
+            throw new ArgumentException($"Monster with id {monsterId} not found for this session.", nameof(monsterId));
+
+        monster.MoveToBattle(targetBattleId, newOrder);
     }
 }
