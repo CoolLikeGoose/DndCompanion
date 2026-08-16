@@ -20,8 +20,10 @@ using DndCompanion.Application.Features.Characters.UpdateInfo;
 using DndCompanion.Application.Features.Characters.UpdateStats;
 using DndCompanion.Application.Features.Monsters.AddBestiaryEntry;
 using DndCompanion.Application.Features.Monsters.AddMonster;
+using DndCompanion.Application.Features.Monsters.MoveMonsterToBattle;
 using DndCompanion.Application.Features.Monsters.RemoveBestiaryEntry;
 using DndCompanion.Application.Features.Monsters.RemoveMonster;
+using DndCompanion.Application.Features.Monsters.ReorderMonster;
 using DndCompanion.Application.Features.Monsters.UpdateBestiaryEntry;
 using DndCompanion.Application.Features.Monsters.UpdateMonster;
 using DndCompanion.Application.Features.Sessions.AddBattle;
@@ -29,6 +31,7 @@ using DndCompanion.Application.Features.Sessions.CreateSession;
 using DndCompanion.Application.Features.Sessions.JoinSession;
 using DndCompanion.Application.Features.Sessions.RemoveBattle;
 using DndCompanion.Application.Features.Sessions.RenameBattle;
+using DndCompanion.Application.Features.Sessions.ReorderBattle;
 using Infrastructure.Identity;
 using Infrastructure.Persistence;
 using Infrastructure.Repositories;
@@ -82,10 +85,13 @@ builder.Services.AddScoped<UpdateBestiaryEntryService>();
 builder.Services.AddScoped<AddBattleService>();
 builder.Services.AddScoped<RemoveBattleService>();
 builder.Services.AddScoped<RenameBattleService>();
+builder.Services.AddScoped<ReorderBattleService>();
 
 builder.Services.AddScoped<AddMonsterService>();
 builder.Services.AddScoped<RemoveMonsterService>();
 builder.Services.AddScoped<UpdateMonsterService>();
+builder.Services.AddScoped<MoveMonsterToBattleService>();
+builder.Services.AddScoped<ReorderMonsterService>();
 
 // Character
 builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
