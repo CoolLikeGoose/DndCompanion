@@ -15,7 +15,7 @@ public class AddBestiaryEntryService
     public async Task<AddBestiaryEntryResult> ExecuteAsync(AddBestiaryEntryCommand command, CancellationToken cancellationToken = default)
     {
         var existing = await _bestiaryRepository.GetBestiaryEntriesAsync(command.MasterId, cancellationToken);
-        if (existing.Any(x => x.Name == command.Name))
+        if (existing.Any(x => x.Name.Equals(command.Name.Trim(), StringComparison.OrdinalIgnoreCase)))
             return new AddBestiaryEntryResult(false, "Entry with this name already exists in bestiary");
 
         try

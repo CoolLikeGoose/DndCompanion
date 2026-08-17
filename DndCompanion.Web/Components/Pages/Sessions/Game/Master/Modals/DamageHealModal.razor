@@ -120,6 +120,8 @@
     private async Task ApplyDamageHeal(bool isHealing)
     {
         var delta = isHealing ? _outValue : -_outValue;
+        
+        if (delta == 0) return;
 
         await _onApply!(delta);
         _modalOpen = false;

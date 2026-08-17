@@ -9,7 +9,7 @@ public class Monster
     public Guid Id { get; private set; }
     public Guid SessionId { get; private set; }
     public Guid? BestiaryEntryId { get; private set; }
-    public Guid? BattleId { get; private set; }
+    public Guid BattleId { get; private set; }
     public double Order { get; private set; }
     public string Name { get; private set; } = null!;
 

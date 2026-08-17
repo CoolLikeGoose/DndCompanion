@@ -32,6 +32,10 @@ public class Battle
         var normalizedName = name?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(normalizedName))
             throw new ArgumentException("Name is required", nameof(name));
+        
+        if (normalizedName.Length > 100)
+            throw new ArgumentException("Name is too long (max 100 chars)", nameof(name));
+
 
         Name = normalizedName;
     }

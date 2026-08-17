@@ -138,7 +138,7 @@ else
         var repository = scope.ServiceProvider.GetRequiredService<IBestiaryRepository>();
 
         var entry = await repository.FindByIdAsync(bestiaryEntryId);
-        if (entry is null) return;
+        if (entry is null || entry.MasterId != CurrentUser.UserId) return;
 
         repository.Remove(entry);
         await repository.SaveChangesAsync();

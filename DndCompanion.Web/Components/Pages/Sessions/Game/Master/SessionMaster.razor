@@ -396,7 +396,7 @@
 
     private async Task HandleRemoveMonster(Guid monsterId)
     {
-        var scope = ScopeFactory.CreateScope();
+        using var scope = ScopeFactory.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<RemoveMonsterService>();
         await service.ExecuteAsync(new RemoveMonsterCommand(SessionId, monsterId));
         await LoadMonstersAsync();
@@ -406,7 +406,12 @@
     {
         using var scope = ScopeFactory.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<AddMonsterService>();
-        await service.ExecuteAsync(new AddMonsterCommand(SessionId, monster.Name, monster.MaxHp, monster.Description));
+        await service.ExecuteAsync(new AddMonsterCommand(
+            SessionId: SessionId, 
+            Name: monster.Name, 
+            MaxHitPoints: monster.MaxHp, 
+            Description: monster.Description,
+            BattleId: monster.BattleId));
         await LoadMonstersAsync();
     }
 
