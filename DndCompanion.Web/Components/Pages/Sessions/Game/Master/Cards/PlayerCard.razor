@@ -1,0 +1,73 @@
+﻿@using Domain.Entities
+@using Domain.Enums
+
+@{
+    var hp = participant.Character!.Resources.FirstOrDefault(r => r.Type == ResourceType.HitPoints);
+}
+<div class="card p-3 master-card @CardClass"
+     @onclick="@OnCardClick">
+    <div class="d-flex justify-content-between">
+        <div>
+            <div class="fw-semibold">@participant.Character!.Name</div>
+            <div class="small text-muted">@participant.DisplayName</div>
+        </div>
+        <div>
+            @if (hp is not null && hp.CurrentValue <= 0)
+            {
+                var successes = participant.Character.DeathSavesSuccesses;
+                var failures = participant.Character.DeathSavesFailures;
+
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="text-muted" style="width: 60px;">Success</span>
+                    @for (int i = 0; i < 3; i++)
+                    {
+                        var filled = i < successes;
+                        <span style="
+                            width: 18px;
+                            height: 18px;
+                            border-radius: 50%;
+                            display: inline-block;
+                            border: 2px solid #198754;
+                            background: @(filled ? "#198754" : "transparent");"></span>
+                    }
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="text-muted" style="width: 60px;">Failure</span>
+                    @for (int i = 0; i < 3; i++)
+                    {
+                        var filled = i < failures;
+                        <span style="
+                            width: 18px;
+                            height: 18px;
+                            border-radius: 50%;
+                            display: inline-block;
+                            border: 2px solid #dc3545;
+                            background: @(filled ? "#dc3545" : "transparent");"></span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+    @if (hp is not null)
+    {
+        var percent = hp.MaxValue > 0 ? (double)hp.CurrentValue / hp.MaxValue * 100 : 0;
+        var hue = (int)(percent * 1.2);
+        var barStyle = $"width: {percent:F0}%; background-color: hsl({hue}, 80%, 45%);";
+
+        <div class="mt-2">
+            <div class="d-flex justify-content-between small text-muted mb-1">
+                <span>HP</span>
+                <span>@hp.CurrentValue/@hp.MaxValue</span>
+            </div>
+            <div class="progress" style="height: 6px;">
+                <div class="progress-bar" style="@barStyle"></div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public required SessionParticipant participant { get; set; }
+    [Parameter] public string CardClass { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnCardClick { get; set; }
+}

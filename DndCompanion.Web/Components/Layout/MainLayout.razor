@@ -1,5 +1,4 @@
 ﻿@using DndCompanion.Application.Abstractions.Persistence
-@using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.WebUtilities
 @inherits LayoutComponentBase
 @implements IDisposable
@@ -83,7 +82,7 @@
         if (participant is null)
             return;
 
-        var session = await SessionRepository.FindByIdAsync(participant.SessionId);
+        var session = await SessionRepository.FindByIdWithParticipantsAsync(participant.SessionId);
         if (session is not null)
             InviteCode = session.InviteCode.Value;
     }

@@ -1,8 +1,8 @@
-﻿.master-card {
+﻿::deep .master-card {
     transition: all 0.15s ease;
 }
 
-.master-card:hover {
+::deep .master-card:hover {
     transform: scale(1.02);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
 }
@@ -15,7 +15,7 @@
     color: rgba(var(--tool-neutral), 1) !important;
 }
 
-.master-card.tool-damage:hover {
+::deep .master-card.tool-damage:hover {
     border-color: rgba(var(--tool-damage), 1) !important;
 }
 
@@ -27,7 +27,7 @@
     color: rgba(var(--tool-damage), 1) !important;
 }
 
-.master-card.tool-give:hover {
+::deep .master-card.tool-give:hover {
     border-color: rgba(var(--tool-give), 1) !important;
 }
 

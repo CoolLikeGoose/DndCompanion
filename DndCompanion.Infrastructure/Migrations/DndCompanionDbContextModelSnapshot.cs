@@ -17,6 +17,56 @@ namespace Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.14");
 
+            modelBuilder.Entity("Domain.Entities.Battle", b =>
+                {
+                    b.Property<Guid>("BattleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Order")
+                        .HasColumnType("REAL");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("BattleId");
+
+                    b.HasIndex("SessionId");
+
+                    b.ToTable("Battles", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.BestiaryEntry", b =>
+                {
+                    b.Property<Guid>("BestiaryEntryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("MasterId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MaxHp")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("BestiaryEntryId");
+
+                    b.HasIndex("MasterId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("BestiaryEntries", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.Character", b =>
                 {
                     b.Property<Guid>("Id")
@@ -155,6 +205,51 @@ namespace Infrastructure.Migrations
                     b.ToTable("Items", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Monster", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("BattleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("BestiaryEntryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CurrentHp")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MaxHp")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Order")
+                        .HasColumnType("REAL");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BattleId");
+
+                    b.HasIndex("BestiaryEntryId");
+
+                    b.HasIndex("SessionId");
+
+                    b.ToTable("Monsters", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.Resource", b =>
                 {
                     b.Property<Guid>("Id")
@@ -200,6 +295,9 @@ namespace Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DefaultBattleId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("InviteCode")
@@ -281,6 +379,15 @@ namespace Infrastructure.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Battle", b =>
+                {
+                    b.HasOne("Domain.Entities.Session", null)
+                        .WithMany("Battles")
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Domain.Entities.CharacterInfo", b =>
                 {
                     b.HasOne("Domain.Entities.Character", null)
@@ -304,6 +411,26 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.Entities.Character", null)
                         .WithMany("Items")
                         .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Entities.Monster", b =>
+                {
+                    b.HasOne("Domain.Entities.Battle", null)
+                        .WithMany()
+                        .HasForeignKey("BattleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.BestiaryEntry", null)
+                        .WithMany()
+                        .HasForeignKey("BestiaryEntryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Domain.Entities.Session", null)
+                        .WithMany("Monsters")
+                        .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -348,6 +475,10 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Session", b =>
                 {
+                    b.Navigation("Battles");
+
+                    b.Navigation("Monsters");
+
                     b.Navigation("Participants");
                 });
 #pragma warning restore 612, 618

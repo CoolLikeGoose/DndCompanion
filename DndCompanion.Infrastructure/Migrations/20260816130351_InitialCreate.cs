@@ -12,6 +12,21 @@ namespace Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "BestiaryEntries",
+                columns: table => new
+                {
+                    BestiaryEntryId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MasterId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    MaxHp = table.Column<int>(type: "INTEGER", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BestiaryEntries", x => x.BestiaryEntryId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Characters",
                 columns: table => new
                 {
@@ -34,7 +49,8 @@ namespace Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     InviteCode = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
                     PinCode = table.Column<string>(type: "TEXT", maxLength: 8, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    DefaultBattleId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -157,6 +173,26 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Battles",
+                columns: table => new
+                {
+                    BattleId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SessionId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Order = table.Column<double>(type: "REAL", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Battles", x => x.BattleId);
+                    table.ForeignKey(
+                        name: "FK_Battles_Sessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "Sessions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SessionParticipants",
                 columns: table => new
                 {
@@ -185,6 +221,55 @@ namespace Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Monsters",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SessionId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    BestiaryEntryId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    BattleId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Order = table.Column<double>(type: "REAL", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    CurrentHp = table.Column<int>(type: "INTEGER", nullable: false),
+                    MaxHp = table.Column<int>(type: "INTEGER", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Monsters", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Monsters_Battles_BattleId",
+                        column: x => x.BattleId,
+                        principalTable: "Battles",
+                        principalColumn: "BattleId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Monsters_BestiaryEntries_BestiaryEntryId",
+                        column: x => x.BestiaryEntryId,
+                        principalTable: "BestiaryEntries",
+                        principalColumn: "BestiaryEntryId",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Monsters_Sessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "Sessions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Battles_SessionId",
+                table: "Battles",
+                column: "SessionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BestiaryEntries_MasterId_Name",
+                table: "BestiaryEntries",
+                columns: new[] { "MasterId", "Name" },
+                unique: true);
+
             migrationBuilder.CreateIndex(
                 name: "IX_Characters_UserId",
                 table: "Characters",
@@ -194,6 +279,21 @@ namespace Infrastructure.Migrations
                 name: "IX_Items_CharacterId",
                 table: "Items",
                 column: "CharacterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Monsters_BattleId",
+                table: "Monsters",
+                column: "BattleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Monsters_BestiaryEntryId",
+                table: "Monsters",
+                column: "BestiaryEntryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Monsters_SessionId",
+                table: "Monsters",
+                column: "SessionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Resources_CharacterId",
@@ -236,6 +336,9 @@ namespace Infrastructure.Migrations
                 name: "Items");
 
             migrationBuilder.DropTable(
+                name: "Monsters");
+
+            migrationBuilder.DropTable(
                 name: "Resources");
 
             migrationBuilder.DropTable(
@@ -243,6 +346,12 @@ namespace Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "Battles");
+
+            migrationBuilder.DropTable(
+                name: "BestiaryEntries");
 
             migrationBuilder.DropTable(
                 name: "Characters");

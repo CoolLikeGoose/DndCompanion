@@ -1,161 +1,194 @@
 ﻿@page "/sessions/{SessionId:guid}/master"
+@using DndCompanion.Application.Abstractions.Identity
 @using DndCompanion.Application.Abstractions.Persistence
 @using DndCompanion.Application.Features.Characters.Resources.ApplyRest.ApplyRestParty
+@using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource
+@using DndCompanion.Application.Features.Monsters.AddMonster
+@using DndCompanion.Application.Features.Monsters.MoveMonsterToBattle
+@using DndCompanion.Application.Features.Monsters.RemoveMonster
+@using DndCompanion.Application.Features.Monsters.ReorderMonster
+@using DndCompanion.Application.Features.Monsters.UpdateMonster
+@using DndCompanion.Application.Features.Sessions.AddBattle
+@using DndCompanion.Application.Features.Sessions.RemoveBattle
+@using DndCompanion.Application.Features.Sessions.RenameBattle
+@using DndCompanion.Application.Features.Sessions.ReorderBattle
 @using Domain.Entities
 @using Domain.Enums
-@using Web.Components.Shared
+@using Web.Components.Pages.Sessions.Game.Master.Cards
 @using Web.Components.Pages.Sessions.Game.Master.Modals
+@using Web.Components.Pages.Sessions.Game.Master.Models
+@using Web.Components.Pages.Sessions.Game.Shared
 
 @inject IServiceScopeFactory ScopeFactory
+@inject IJSRuntime JsRuntime
 
+@inject ICurrentUser CurrentUser
 @inject SessionNotificationService SessionNotificationService
 
 @implements IDisposable
 
-@if (_session is null)
-{
-    <p>Loading...</p>
-}
-else
-{
-    <div class="container py-3">
-        @if (_resourceError is not null)
+
+<div class="container py-3">
+    @if (_resourceError is not null)
+    {
+        <div class="alert alert-danger" role="alert">
+            @_resourceError
+        </div>
+    }
+    <div class="d-flex justify-content-between mb-3">
+        <h3>Characters</h3>
+        <div class="btn-group">
+            <button class="btn btn-primary"
+                    @onclick="() => ApplyRest(true)"
+                    disabled="@_isBusy">
+                Long Rest
+            </button>
+            <button class="btn btn-primary dropdown-toggle"
+                    @onclick="() => _restDropdownOpen = !_restDropdownOpen"
+                    @onblur="async () => { await Task.Delay(100); _restDropdownOpen = false; }">
+            </button>
+
+            @if (_restDropdownOpen)
+            {
+                <div class="dropdown-menu show w-100"
+                     style="position:absolute; top: 100%; left: 0;">
+                    <button class="dropdown-item" @onclick="() => ApplyRest(false)">Short Rest</button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="row g-2">
+        @foreach (var participant in _participants.Where(p => p.Role == SessionRole.Player && p.Character is not null))
         {
-            <div class="alert alert-danger" role="alert">
-                @_resourceError
+            <div class="col-6">
+                <PlayerCard
+                    Participant="@participant"
+                    CardClass="@GetCardClass()"
+                    OnCardClick="() => OnCardClick(participant)"/>
             </div>
         }
-        <div class="d-flex justify-content-between mb-3">
-            <h3>Characters</h3>
-            <div class="btn-group">
-                <button class="btn btn-primary"
-                        @onclick="() => ApplyRest(true)"
-                        disabled="@_isBusy">
-                    Long Rest
-                </button>
-                <button class="btn btn-primary dropdown-toggle"
-                        @onclick="() => _restDropdownOpen = !_restDropdownOpen"
-                        @onblur="async () => { await Task.Delay(100); _restDropdownOpen = false; }">
-                </button>
+        @if (!_participants.Any(p => p.Role == SessionRole.Player && p.Character is not null))
+        {
+            <div class="col-12">
+                <p class="text-muted">No players with characters yet.</p>
+            </div>
+        }
+    </div>
 
-                @if (_restDropdownOpen)
-                {
-                    <div class="dropdown-menu show w-100"
-                         style="position:absolute; top: 100%; left: 0;">
-                        <button class="dropdown-item" @onclick="() => ApplyRest(false)">Short Rest</button>
-                    </div>
+    <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+        <h3 class="mb-0">Battles</h3>
+        <button class="btn btn-outline-primary btn-sm" @onclick="HandleAddBattle">
+            + Add battle
+        </button>
+    </div>
+
+    <div id="battle-container">
+        @foreach (var battle in _battles.OrderBy(b => b.Order))
+        {
+            <div class="mb-3" data-battle-id-value="@battle.BattleId" @key="battle.BattleId">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-grip-vertical battle-drag-handle" style="cursor: grab;"></i>
+                    @if (_editingBattleId == battle.BattleId)
+                    {
+                        <input class="form-control form-control-sm w-auto" style="max-width: 220px;"
+                               @bind="_editingBattleName" @bind:event="oninput"
+                               @onblur="() => SaveBattleName(battle.BattleId)"
+                               @onkeydown="@(async (KeyboardEventArgs e) =>
+                                           {
+                                               if (e.Key == "Enter") await SaveBattleName(battle.BattleId);
+                                           })"
+                               autofocus/>
+                    }
+                    else
+                    {
+                        <h5 class="mb-0" role="button" @onclick="() => StartEditBattleName(battle)">
+                            @battle.Name
+                        </h5>
+                    }
+
+                    @if (battle.BattleId != _defaultBattleId)
+                    {
+                        <button class="btn btn-sm btn-outline-danger"
+                                @onclick="() => HandleRemoveBattle(battle.BattleId)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    }
+                </div>
+
+                @{
+                    var orderedMonsters = _monsters
+                        .Where(m => m.BattleId == battle.BattleId)
+                        .OrderBy(m => m.Order)
+                        .ToList();
                 }
-            </div>
-        </div>
-        <div class="row g-2">
-            @foreach (var participant in _session.Participants.Where(p => p.Role == SessionRole.Player && p.Character is not null))
-            {
-                var hp = participant.Character!.Resources.FirstOrDefault(r => r.Type == ResourceType.HitPoints);
-                <div class="col-6">
-                    <div class="card p-3 master-card @GetCardClass()"
-                         @onclick="() => OnCardClick(participant)">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <div class="fw-semibold">@participant.Character!.Name</div>
-                                <div class="small text-muted">@participant.DisplayName</div>
-                            </div>
-                            <div>
-                                @if (hp is not null && hp.CurrentValue <= 0)
-                                {
-                                    var successes = participant.Character.DeathSavesSuccesses;
-                                    var failures = participant.Character.DeathSavesFailures;
 
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <span class="text-muted" style="width: 60px;">Success</span>
-                                        @for (int i = 0; i < 3; i++)
-                                        {
-                                            var filled = i < successes;
-                                            <span style="
-                                                width: 18px;
-                                                height: 18px;
-                                                border-radius: 50%;
-                                                display: inline-block;
-                                                border: 2px solid #198754;
-                                                background: @(filled ? "#198754" : "transparent");"></span>
-                                        }
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <span class="text-muted" style="width: 60px;">Failure</span>
-                                        @for (int i = 0; i < 3; i++)
-                                        {
-                                            var filled = i < failures;
-                                            <span style="
-                                                width: 18px;
-                                                height: 18px;
-                                                border-radius: 50%;
-                                                display: inline-block;
-                                                border: 2px solid #dc3545;
-                                                background: @(filled ? "#dc3545" : "transparent");"></span>
-                                        }
-                                    </div>
-                                }
-                            </div>
+                <div class="row g-2" id="monster-container-@battle.BattleId" data-battle-id="@battle.BattleId">
+                    @for (var i = 0; i < orderedMonsters.Count; i++)
+                    {
+                        var monster = orderedMonsters[i];
+
+                        <div class="col-6" data-monster-id="@monster.Id" @key="monster.Id">
+                            <MonsterCard
+                                Monster="monster"
+                                Number="@(i + 1)"
+                                CardClass="@GetCardClass()"
+                                OnCardClick="() => OnCardClick(monster)"
+                                OnDuplicate="() => HandleMonsterDuplicate(monster)"
+                                OnRemove="() => HandleRemoveMonster(monster.Id)"/>
                         </div>
-                        @if (hp is not null)
-                        {
-                            var percent = hp.MaxValue > 0 ? (double)hp.CurrentValue / hp.MaxValue * 100 : 0;
-                            var hue = (int)(percent * 1.2);
-                            var barStyle = $"width: {percent:F0}%; background-color: hsl({hue}, 80%, 45%);";
-
-                            <div class="mt-2">
-                                <div class="d-flex justify-content-between small text-muted mb-1">
-                                    <span>HP</span>
-                                    <span>@hp.CurrentValue/@hp.MaxValue</span>
-                                </div>
-                                <div class="progress" style="height: 6px;">
-                                    <div class="progress-bar" style="@barStyle"></div>
-                                </div>
-                            </div>
-                        }
+                    }
+                </div>
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <button class="btn btn-outline-secondary w-100 h-100" style="min-height: 80px;"
+                                @onclick="() => _editMonsterModal.Open(battle.BattleId)">
+                            + Add monster
+                        </button>
                     </div>
                 </div>
-            }
-            @if (!_session.Participants.Any(p => p.Role == SessionRole.Player && p.Character is not null))
-            {
-                <div class="col-12">
-                    <p class="text-muted">No players with characters yet.</p>
-                </div>
-            }
-        </div>
-    </div>
-
-    <div style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1000;">
-        <div class="bg-primary p-1 rounded-3 shadow">
-            <p class="text-center text-white mb-0">
-                Tools
-            </p>
-            <div class="bg-white rounded-3 p-2">
-                <button
-                    class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.None ? "tool-neutral" : "")"
-                    @onclick="() => SelectTool(MasterTool.None)">
-                    <i class="bi bi-slash-circle tool-neutral-icon"></i>
-                    No tool
-                </button>
-                <button
-                    class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.DamageHeal ? "tool-damage" : "")"
-                    @onclick="() => SelectTool(MasterTool.DamageHeal)">
-                    <i class="bi bi-lightning-fill tool-damage-icon"></i>
-                    Damage/Heal
-                </button>
-                <button
-                    class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.GiveItem ? "tool-give" : "")"
-                    @onclick="() => SelectTool(MasterTool.GiveItem)">
-                    <i class="bi bi-bag-plus-fill tool-give-icon"></i>
-                    Give Item
-                </button>
             </div>
+        }
+    </div>
+</div>
+
+<div style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1000;">
+    <div class="bg-primary p-1 rounded-3 shadow">
+        <p class="text-center text-white mb-0">
+            Tools
+        </p>
+        <div class="bg-white rounded-3 p-2">
+            <button
+                class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.None ? "tool-neutral" : "")"
+                @onclick="() => SelectTool(MasterTool.None)">
+                <i class="bi bi-slash-circle tool-neutral-icon"></i>
+                No tool
+            </button>
+            <button
+                class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.DamageHeal ? "tool-damage" : "")"
+                @onclick="() => SelectTool(MasterTool.DamageHeal)">
+                <i class="bi bi-lightning-fill tool-damage-icon"></i>
+                Damage/Heal
+            </button>
+            <button
+                class="btn w-100 text-start d-flex align-items-center gap-2 tool @(_activeTool == MasterTool.GiveItem ? "tool-give" : "")"
+                @onclick="() => SelectTool(MasterTool.GiveItem)">
+                <i class="bi bi-bag-plus-fill tool-give-icon"></i>
+                Give Item
+            </button>
         </div>
     </div>
-}
+</div>
 
-<DamageHealModal @ref="_damageHealModal" SessionId="SessionId" OnSaved="HandleSaved"/>
+
+<DamageHealModal @ref="_damageHealModal" SessionId="SessionId"/>
 
 <GiveItemModal @ref="_giveItemModal" SessionId="@SessionId" OnSaved="HandleSaved"/>
+
+<EditMonsterModal @ref="_editMonsterModal"
+                  OnSaved="HandleMonsterSave"
+                  IsAuthenticated="@CurrentUser.IsAuthenticated"
+                  SearchBestiary="SearchBestiaryEntries"/>
 
 <SessionNavBar SessionId="@SessionId" ParticipantId="@ParticipantId" Role="@SessionRole.Master"/>
 
@@ -167,19 +200,24 @@ else
 
     private bool _isBusy = false;
     private string? _resourceError = null;
-    private Session? _session;
+    private List<SessionParticipant> _participants = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadSessionAsync();
+        await LoadParticipantsAsync();
+        await LoadMonstersAsync();
         SessionNotificationService.Subscribe(SessionId, OnSessionUpdated);
     }
 
-    private async Task LoadSessionAsync()
+    private async Task LoadParticipantsAsync()
     {
         using var scope = ScopeFactory.CreateScope();
         var repo = scope.ServiceProvider.GetRequiredService<ISessionRepository>();
-        _session = await repo.FindByIdWithParticipantsAndCharactersAsync(SessionId);
+        var session = await repo.FindByIdWithParticipantsAndCharactersAsync(SessionId);
+        _participants = session?.Participants
+            .Where(p => p.Role == SessionRole.Player && p.Character is not null)
+            .ToList() ?? new();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OnSessionUpdated(SessionEvent sessionEvent)
@@ -187,7 +225,7 @@ else
         if (sessionEvent.Type == SessionEventType.ItemsUpdated)
             return;
 
-        await LoadSessionAsync();
+        await LoadParticipantsAsync();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -222,7 +260,19 @@ else
         {
             case MasterTool.DamageHeal:
                 var hp = participant.Character!.Resources.FirstOrDefault(r => r.Type == ResourceType.HitPoints);
-                _damageHealModal.Open(participant.Id, participant.Character!.Name, hp?.CurrentValue ?? 0, hp?.MaxValue ?? 0);
+                _damageHealModal.Open(participant.Character!.Name, hp?.CurrentValue ?? 0, hp?.MaxValue ?? 0, async delta =>
+                {
+                    using var scope = ScopeFactory.CreateScope();
+                    var service = scope.ServiceProvider.GetRequiredService<ChangeCharacterResourceService>();
+                    await service.ExecuteAsync(new ChangeCharacterResourceCommand(
+                        ParticipantId: participant.Id,
+                        ResourceType: ResourceType.HitPoints,
+                        Name: StaticResourceNames.HitPoints,
+                        Delta: delta
+                    ));
+                    await HandleSaved(new SessionEvent(SessionEventType.ResourcesUpdated, SessionId, participant.Id,
+                        new DamageLogEntry(DateTime.UtcNow, participant.Character!.Name, delta, delta > 0)));
+                });
                 break;
             case MasterTool.GiveItem:
                 _giveItemModal.Open(participant.Id, participant.Character!.Name);
@@ -232,9 +282,27 @@ else
         }
     }
 
+    private void OnCardClick(Monster monster)
+    {
+        switch (_activeTool)
+        {
+            case MasterTool.DamageHeal:
+                _damageHealModal.Open(monster.Name, monster.CurrentHp, monster.MaxHp, async delta =>
+                {
+                    using var scope = ScopeFactory.CreateScope();
+                    var service = scope.ServiceProvider.GetRequiredService<UpdateMonsterService>();
+                    await service.ExecuteAsync(new UpdateMonsterCommand(SessionId, monster.Id, HitPoints: monster.CurrentHp + delta));
+                    await LoadMonstersAsync();
+                });
+                break;
+            default:
+                break;
+        }
+    }
+
     private async Task HandleSaved(SessionEvent sessionEvent)
     {
-        await LoadSessionAsync();
+        await LoadParticipantsAsync();
         await SessionNotificationService.NotifyAsync(sessionEvent);
     }
 
@@ -271,9 +339,218 @@ else
         await OnSessionUpdated(sessionEvent);
     }
 
+    // Monsters
+    private List<Monster> _monsters = new();
+    private List<Battle> _battles = [];
+    private EditMonsterModal _editMonsterModal = null!;
+
+    private async Task LoadMonstersAsync()
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var repo = scope.ServiceProvider.GetRequiredService<ISessionRepository>();
+        var session = await repo.FindByIdWithMonstersAsync(SessionId);
+
+        _monsters = session?.Monsters.ToList() ?? new();
+        _battles = session?.Battles.ToList() ?? [];
+        _defaultBattleId = session?.DefaultBattleId ?? Guid.Empty;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleMonsterSave(MonsterFormData monsterData)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        if (monsterData.IsEdit)
+        {
+            var service = scope.ServiceProvider.GetRequiredService<UpdateMonsterService>();
+            await service.ExecuteAsync(new UpdateMonsterCommand(
+                SessionId,
+                monsterData.MonsterId!.Value,
+                monsterData.Name,
+                monsterData.MaxHp,
+                monsterData.CurrentHp,
+                monsterData.Description));
+        }
+        else
+        {
+            var service = scope.ServiceProvider.GetRequiredService<AddMonsterService>();
+            var result = await service.ExecuteAsync(new AddMonsterCommand(
+                SessionId,
+                monsterData.Name,
+                monsterData.MaxHp,
+                monsterData.Description,
+                monsterData.SaveToBestiary,
+                monsterData.BattleId));
+
+            if (!result.IsSuccess)
+            {
+                _resourceError = result.ErrorMessage;
+                return;
+            }
+        }
+
+        _resourceError = null;
+
+        await LoadMonstersAsync();
+    }
+
+    private async Task HandleRemoveMonster(Guid monsterId)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<RemoveMonsterService>();
+        await service.ExecuteAsync(new RemoveMonsterCommand(SessionId, monsterId));
+        await LoadMonstersAsync();
+    }
+
+    private async Task HandleMonsterDuplicate(Monster monster)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<AddMonsterService>();
+        await service.ExecuteAsync(new AddMonsterCommand(
+            SessionId: SessionId, 
+            Name: monster.Name, 
+            MaxHitPoints: monster.MaxHp, 
+            Description: monster.Description,
+            BattleId: monster.BattleId));
+        await LoadMonstersAsync();
+    }
+
+    private async Task<List<BestiaryEntry>> SearchBestiaryEntries(string prefix, CancellationToken ct)
+    {
+        if (CurrentUser.UserId is not { } masterId || string.IsNullOrWhiteSpace(prefix))
+            return [];
+
+        using var scope = ScopeFactory.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IBestiaryRepository>();
+        return await repository.SearchBestiaryEntriesAsync(masterId, prefix, limit: 5, ct);
+    }
+
+    // Monsters > Battles
+    private Guid _defaultBattleId;
+    private Guid? _editingBattleId;
+    private string _editingBattleName = string.Empty;
+
+    private async Task HandleAddBattle()
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<AddBattleService>();
+        await service.ExecuteAsync(new AddBattleCommand(SessionId, "New battle"));
+        await LoadMonstersAsync();
+    }
+
+    private async Task HandleRemoveBattle(Guid battleId)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<RemoveBattleService>();
+        await service.ExecuteAsync(new RemoveBattleCommand(SessionId, battleId));
+        await LoadMonstersAsync();
+    }
+
+    private void StartEditBattleName(Battle battle)
+    {
+        _editingBattleId = battle.BattleId;
+        _editingBattleName = battle.Name;
+    }
+
+    private async Task SaveBattleName(Guid battleId)
+    {
+        _editingBattleId = null;
+
+        using var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<RenameBattleService>();
+        await service.ExecuteAsync(new RenameBattleCommand(SessionId, battleId, _editingBattleName));
+        await LoadMonstersAsync();
+    }
+
+    // Drag-n-Drop
+    private DotNetObjectReference<SessionMaster>? _dotNetRef;
+    private readonly HashSet<string> _initializedContainers = [];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+        }
+
+        foreach (var battle in _battles)
+        {
+            var containerId = $"monster-container-{battle.BattleId}";
+            if (_initializedContainers.Add(containerId))
+            {
+                await JsRuntime.InvokeVoidAsync("sortableInterop.initMonsterSortable", containerId, _dotNetRef);
+            }
+        }
+
+        if (_initializedContainers.Add("battle-container"))
+        {
+            await JsRuntime.InvokeVoidAsync("sortableInterop.initBattleSortable", "battle-container", _dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnMonsterReordered(Guid monsterId, Guid targetBattleId, int newIndex)
+    {
+        var targetBattleMonsters = _monsters
+            .Where(m => m.BattleId == targetBattleId && m.Id != monsterId)
+            .OrderBy(m => m.Order)
+            .ToList();
+
+        var newOrder = CalculateMonsterOrder(targetBattleMonsters, newIndex);
+        var monster = _monsters.First(m => m.Id == monsterId);
+
+        using var scope = ScopeFactory.CreateScope();
+
+        if (monster.BattleId == targetBattleId)
+        {
+            var service = scope.ServiceProvider.GetRequiredService<ReorderMonsterService>();
+            var result = await service.ExecuteAsync(new ReorderMonsterCommand(SessionId, monsterId, newOrder));
+            if (!result.IsSuccess) _resourceError = result.ErrorMessage;
+        }
+        else
+        {
+            var service = scope.ServiceProvider.GetRequiredService<MoveMonsterToBattleService>();
+            var result = await service.ExecuteAsync(new MoveMonsterToBattleCommand(SessionId, monsterId, targetBattleId, newOrder));
+            if (!result.IsSuccess) _resourceError = result.ErrorMessage;
+        }
+
+        await LoadMonstersAsync();
+    }
+
+    [JSInvokable]
+    public async Task OnBattleReordered(Guid battleId, int newIndex)
+    {
+        var otherBattles = _battles.Where(b => b.BattleId != battleId).OrderBy(b => b.Order).ToList();
+        var newOrder = CalculateBattleOrder(otherBattles, newIndex);
+
+        using var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<ReorderBattleService>();
+        var result = await service.ExecuteAsync(new ReorderBattleCommand(SessionId, battleId, newOrder));
+        if (!result.IsSuccess) _resourceError = result.ErrorMessage;
+
+        await LoadMonstersAsync();
+    }
+
+    private static double CalculateMonsterOrder(List<Monster> siblings, int newIndex)
+    {
+        if (siblings.Count == 0) return 1000;
+        if (newIndex <= 0) return siblings[0].Order - 1000;
+        if (newIndex >= siblings.Count) return siblings[^1].Order + 1000;
+        return (siblings[newIndex - 1].Order + siblings[newIndex].Order) / 2;
+    }
+
+    private static double CalculateBattleOrder(List<Battle> siblings, int newIndex)
+    {
+        if (siblings.Count == 0) return 1000;
+        if (newIndex <= 0) return siblings[0].Order - 1000;
+        if (newIndex >= siblings.Count) return siblings[^1].Order + 1000;
+        return (siblings[newIndex - 1].Order + siblings[newIndex].Order) / 2;
+    }
+
     public void Dispose()
     {
         SessionNotificationService.Unsubscribe(SessionId, OnSessionUpdated);
+        _dotNetRef?.Dispose();
     }
 
 }

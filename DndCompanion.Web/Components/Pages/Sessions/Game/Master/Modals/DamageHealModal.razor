@@ -1,15 +1,11 @@
-﻿@using DndCompanion.Application.Features.Characters.Resources.ChangeCharacterResource
-@using Domain.Enums
-
-@inject IServiceScopeFactory ScopeFactory
-
+﻿
 @if (_modalOpen)
 {
     <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Damage/Heal Participant</h5>
+                    <h5 class="modal-title">Damage/Heal Tool</h5>
                     <button type="button" class="btn-close" @onclick="() => _modalOpen = false"></button>
                 </div>
                 <div class="modal-body">
@@ -66,30 +62,30 @@
 
 @code {
     [Parameter] public Guid SessionId { get; set; }
-    [Parameter] public EventCallback<SessionEvent> OnSaved { get; set; }
 
     private ElementReference _inputRef;
 
     private bool _modalOpen = false;
+    private Func<int, Task>? _onApply;
 
-    private Guid _targetParticipant;
-    private string _targetCharacterName = string.Empty;
+    private string _targetName = string.Empty;
     private int _outValue = 0;
     private string? _valueExpression;
     private int _currentHp = 0;
     private int _maxHp = 0;
 
-    public void Open(Guid participantId, string characterName, int currentHp, int maxHp)
+    public void Open(string targetName, int currentHp, int maxHp, Func<int, Task>? onApply)
     {
-        _targetParticipant = participantId;
         _outValue = 0;
         _valueExpression = null;
-        _targetCharacterName = characterName;
+        _targetName = targetName;
         _modalOpen = true;
+        _onApply = onApply;
         _currentHp = currentHp;
         _maxHp = maxHp;
 
         _ = FocusInputAsync();
+        StateHasChanged();
     }
 
     private async Task FocusInputAsync()
@@ -123,27 +119,12 @@
 
     private async Task ApplyDamageHeal(bool isHealing)
     {
-        if (_targetParticipant == Guid.Empty || _outValue <= 0)
-            return;
-
         var delta = isHealing ? _outValue : -_outValue;
+        
+        if (delta == 0) return;
 
-        using var scope = ScopeFactory.CreateScope();
-        var service = scope.ServiceProvider.GetRequiredService<ChangeCharacterResourceService>();
-
-        await service.ExecuteAsync(new ChangeCharacterResourceCommand(
-            ParticipantId: _targetParticipant,
-            ResourceType: ResourceType.HitPoints,
-            Name: StaticResourceNames.HitPoints,
-            Delta: delta
-        ));
-
+        await _onApply!(delta);
         _modalOpen = false;
-
-        await OnSaved.InvokeAsync(
-            new SessionEvent(SessionEventType.ResourcesUpdated, SessionId, _targetParticipant, 
-                new DamageLogEntry(DateTime.UtcNow, _targetCharacterName, _outValue, isHealing))
-        );
     }
 
 }
