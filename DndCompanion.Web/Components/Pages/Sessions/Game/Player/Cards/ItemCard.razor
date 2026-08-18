@@ -30,11 +30,11 @@
         @if (!string.IsNullOrWhiteSpace(Item.SourceUrl))
         {
             <div class="px-3 pb-2">
-                @if (Item.SourceUrl?.StartsWith("https://") == true)
+                @if (IsValidSourceUrl(Item.SourceUrl))
                 {
                     <a href="@Item.SourceUrl" target="_blank" class="small text-decoration-underline" rel="noopener noreferrer">Source</a>
                 }
-                else
+                else if (!string.IsNullOrWhiteSpace(Item.SourceUrl))
                 {
                     <p class="text-muted">Invalid Source Link</p>
                 }
@@ -53,4 +53,9 @@
     
     private void ToggleExpanded() => _expanded = !_expanded;
     private bool CanExpand() => !string.IsNullOrWhiteSpace(Item.Description) || !string.IsNullOrWhiteSpace(Item.SourceUrl);
+    
+    private static bool IsValidSourceUrl(string? url) =>
+        !string.IsNullOrWhiteSpace(url) &&
+        Uri.TryCreate(url, UriKind.Absolute, out var result) &&
+        (result.Scheme == Uri.UriSchemeHttp || result.Scheme == Uri.UriSchemeHttps);
 }
