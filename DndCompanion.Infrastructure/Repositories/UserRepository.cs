@@ -18,7 +18,12 @@ public sealed class UserRepository : IUserRepository
     {
         return _dbContext.Users.AnyAsync(x => x.Email == email, cancellationToken);
     }
-    
+
+    public Task<bool> ExistsById(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Users.AnyAsync(x => x.Id == userId, cancellationToken);
+    }
+
     public async Task<User?> FindByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Users.FirstOrDefaultAsync(x => x.Email == email, cancellationToken);

@@ -44,6 +44,8 @@ using Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var appInstanceId = Guid.NewGuid().ToString("N");
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -53,11 +55,58 @@ builder.Services.AddDbContext<DndCompanionDbContext>(options =>
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
-    {
-        options.LoginPath = "/auth/login";
-        options.LogoutPath = "/auth/logout";
-        options.AccessDeniedPath = "/auth/login";
-    });
+        {
+            options.LoginPath = "/auth/login";
+            options.LogoutPath = "/auth/logout";
+            options.AccessDeniedPath = "/auth/login";
+            
+            options.Events = new CookieAuthenticationEvents
+            {
+                OnValidatePrincipal = async context =>
+                {
+                    var userIdClaim = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                    if (!Guid.TryParse(userIdClaim, out var userId))
+                    {
+                        context.RejectPrincipal();
+                        await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                        return;
+                    }
+
+                    var storedInstanceId = context.Properties.Items.TryGetValue("AppInstanceId", out var storedRaw)
+                        ? storedRaw
+                        : null;
+
+                    var issuedUtc = context.Properties.IssuedUtc ?? DateTimeOffset.MinValue;
+                    var lastValidated = context.Properties.Items.TryGetValue("LastValidatedUtc", out var raw)
+                                        && DateTimeOffset.TryParse(raw, out var parsed)
+                        ? parsed
+                        : issuedUtc;
+
+                    // Hard update if the program was restarted or if the last validation was more than 5 minutes ago
+                    // for easier debugging
+                    var isSameAppInstance = storedInstanceId == appInstanceId;
+
+                    if (isSameAppInstance && DateTimeOffset.UtcNow - lastValidated < TimeSpan.FromMinutes(5))
+                        return;
+
+                    var userRepository = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
+                    var exists = await userRepository.ExistsById(userId);
+
+                    if (!exists)
+                    {
+                        context.RejectPrincipal();
+                        await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                        return;
+                    }
+
+                    context.Properties.Items["AppInstanceId"] = appInstanceId;
+                    context.Properties.Items["LastValidatedUtc"] = DateTimeOffset.UtcNow.ToString("O");
+                    context.ShouldRenew = true;
+                }
+            };
+        }
+    );
 
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
@@ -260,7 +309,7 @@ app.MapGet("/sessions/resume", async (
         ClearLastSessionCookies(httpContext);
         return Results.Redirect("/?error=session-not-found");
     }
-    
+
     var existingParticipant = await sessionRepository.FindParticipantByIdAsync(participantId);
     if (existingParticipant is null || existingParticipant.SessionId != sessionId)
     {
