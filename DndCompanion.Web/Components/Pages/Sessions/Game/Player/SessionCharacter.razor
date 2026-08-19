@@ -202,7 +202,11 @@
 </div>
 
 
-<EditorModal @ref="_editorModal" ParticipantId="ParticipantId" IsGlobalEdit="_globalEdit" OnSaved="HandleSaved"/>
+<EditorModal @ref="_editorModal" 
+             ParticipantId="ParticipantId" 
+             IsGlobalEdit="_globalEdit" 
+             OnSaved="HandleSaved"
+             Resource="@(_editingResourceType is { } t ? FindResource(t, _editingResourceName) : null)"/>
 
 <AddAbilityModal @ref="_addAbilityModal" IsBusy="_isBusy" OnAdd="HandleAddAbility"/>
 
@@ -292,6 +296,8 @@
     }
 
     // Editor
+    private ResourceType? _editingResourceType;
+    private string? _editingResourceName;
     private void OpenEditorModal(ResourceType type, string name)
     {
         var resource = FindResource(type, name);
@@ -301,7 +307,9 @@
             return;
         }
 
-        _editorModal.Open(resource);
+        _editingResourceType = type;
+        _editingResourceName = name;
+        _editorModal.Open();
     }
 
     private async Task HandleSaved()

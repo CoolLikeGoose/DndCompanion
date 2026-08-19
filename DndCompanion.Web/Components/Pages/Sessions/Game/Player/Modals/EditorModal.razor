@@ -3,12 +3,10 @@
 @using DndCompanion.Application.Features.Characters.Resources.SetCharacterResourceMax
 @using Domain.Entities
 
-@inject ChangeCharacterResourceService ChangeCharacterResourceService
-@inject SetCharacterResourceService SetCharacterResourceService
-@inject SetCharacterResourceMaxService SetCharacterResourceMaxService
+@inject IServiceScopeFactory ScopeFactory
 
-@if (_modalOpen)
-{
+@if (_modalOpen && _resource is not null)
+{ 
     <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -114,6 +112,7 @@
     [Parameter] public Guid ParticipantId { get; set; }
     [Parameter] public bool IsGlobalEdit { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public Resource? Resource { get; set; }
 
     private enum EditMode
     {
@@ -126,22 +125,32 @@
     private bool _isBusy;
     private string? _error;
 
-    private Resource _resource = null!;
+    private Resource? _resource;
     private EditMode _editMode = EditMode.Change;
     private bool _fillToMax = true;
 
     private int _changeDelta = 1;
     private int _setCurrentValue;
     private int _setMaxValue;
+    
+    protected override void OnParametersSet()
+    {
+        if (Resource is not null)
+            _resource = Resource;
+    }
 
-    public void Open(Resource resource)
+    public void Open()
     {
         _changeDelta = 1;
-        _setCurrentValue = resource.CurrentValue;
-        _setMaxValue = resource.MaxValue;
+        
+        if (Resource is not null)
+        {
+            _setCurrentValue = Resource.CurrentValue;
+            _setMaxValue = Resource.MaxValue;
+        }
+        
         _editMode = EditMode.Change;
         _modalOpen = true;
-        _resource = resource;
         _error = null;
 
         StateHasChanged();
@@ -149,14 +158,18 @@
 
     private Task ExecuteChangeAsync(int delta) => ExecuteAsync(async () =>
     {
-        var result = await ChangeCharacterResourceService.ExecuteAsync(
+        using var scope = ScopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<ChangeCharacterResourceService>();
+        var result = await service.ExecuteAsync(
             new ChangeCharacterResourceCommand(ParticipantId, _resource.Type, _resource.Name, delta));
         return (result.IsSuccess, result.ErrorMessage, result.CurrentValue);
     });
 
     private Task ApplySetCurrent() => ExecuteAsync(async () =>
         {
-            var result = await SetCharacterResourceService.ExecuteAsync(
+            using var scope = ScopeFactory.CreateScope();
+            var service = scope.ServiceProvider.GetRequiredService<SetCharacterResourceService>();
+            var result = await service.ExecuteAsync(
                 new SetCharacterResourceCommand(ParticipantId, _resource.Type, _resource.Name, _setCurrentValue));
             return (result.IsSuccess, result.ErrorMessage, result.CurrentValue);
         },
@@ -164,7 +177,9 @@
 
     private Task ApplySetMax() => ExecuteAsync(async () =>
         {
-            var result = await SetCharacterResourceMaxService.ExecuteAsync(
+            using var scope = ScopeFactory.CreateScope();
+            var service = scope.ServiceProvider.GetRequiredService<SetCharacterResourceMaxService>();
+            var result = await service.ExecuteAsync(
                 new SetCharacterResourceMaxCommand(ParticipantId, _resource.Type, _resource.Name, _setMaxValue, _fillToMax));
             return (result.IsSuccess, result.ErrorMessage, result.CurrentValue);
         },
