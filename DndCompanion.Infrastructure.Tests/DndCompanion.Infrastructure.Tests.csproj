@@ -23,4 +23,8 @@
         <Using Include="Xunit"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\DndCompanion.Infrastructure\DndCompanion.Infrastructure.csproj" />
+    </ItemGroup>
+
 </Project>
