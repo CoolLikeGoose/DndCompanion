@@ -161,7 +161,7 @@
         using var scope = ScopeFactory.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<ChangeCharacterResourceService>();
         var result = await service.ExecuteAsync(
-            new ChangeCharacterResourceCommand(ParticipantId, _resource.Type, _resource.Name, delta));
+            new ChangeCharacterResourceCommand(ParticipantId, _resource!.Type, _resource.Name, delta));
         return (result.IsSuccess, result.ErrorMessage, result.CurrentValue);
     });
 
@@ -170,7 +170,7 @@
             using var scope = ScopeFactory.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<SetCharacterResourceService>();
             var result = await service.ExecuteAsync(
-                new SetCharacterResourceCommand(ParticipantId, _resource.Type, _resource.Name, _setCurrentValue));
+                new SetCharacterResourceCommand(ParticipantId, _resource!.Type, _resource.Name, _setCurrentValue));
             return (result.IsSuccess, result.ErrorMessage, result.CurrentValue);
         },
         closeOnSuccess: true);
@@ -180,7 +180,7 @@
             using var scope = ScopeFactory.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<SetCharacterResourceMaxService>();
             var result = await service.ExecuteAsync(
-                new SetCharacterResourceMaxCommand(ParticipantId, _resource.Type, _resource.Name, _setMaxValue, _fillToMax));
+                new SetCharacterResourceMaxCommand(ParticipantId, _resource!.Type, _resource.Name, _setMaxValue, _fillToMax));
             return (result.IsSuccess, result.ErrorMessage, result.CurrentValue);
         },
         closeOnSuccess: true);

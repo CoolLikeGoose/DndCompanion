@@ -41,6 +41,39 @@ public class BattleTests
             Assert.Contains(session.Battles, b => b.BattleId == battle.BattleId);
         }
     }
+    
+    public class BattleOrdering
+    {
+        [Fact]
+        public void AssignsIncrementalOrder_WhenAdded()
+        {
+            var session = CreateSession();
+            var b1 = session.AddBattle("Battle1");
+            var b2 = session.AddBattle("Battle2");
+            Assert.True(b2.Order > b1.Order);
+        }
+    }
+
+    public class ReorderBattle
+    {
+        [Fact]
+        public void Throws_WhenBattleNotFound()
+        {
+            var session = CreateSession();
+            Assert.Throws<ArgumentException>(() => session.ReorderBattle(Guid.NewGuid(), 500));
+        }
+
+        [Fact]
+        public void SetsOrder_WhenValid()
+        {
+            var session = CreateSession();
+            var battle = session.AddBattle("Boss Fight");
+
+            session.ReorderBattle(battle.BattleId, 750);
+
+            Assert.Equal(750, battle.Order);
+        }
+    }
 
     public class RemoveBattle
     {

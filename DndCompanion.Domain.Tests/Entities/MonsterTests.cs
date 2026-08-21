@@ -40,7 +40,7 @@ public class MonsterTests
             Assert.Equal("Test Monster", monster.Name);
         }
     }
-    
+
     public class AddMonsterWithBattle
     {
         [Fact]
@@ -66,6 +66,84 @@ public class MonsterTests
             var session = CreateSession();
             Assert.Throws<ArgumentException>(() =>
                 session.AddMonster("Test Monster", 10, battleId: Guid.NewGuid()));
+        }
+    }
+    
+    public class MonsterOrdering
+    {
+        [Fact]
+        public void AssignsIncrementalOrder_WhenAddedToSameBattle()
+        {
+            var session = CreateSession();
+            var m1 = session.AddMonster("Monster1", 10);
+            var m2 = session.AddMonster("Monster2", 10);
+            Assert.True(m2.Order > m1.Order);
+        }
+
+        [Fact]
+        public void OrderIsIndependent_PerBattle()
+        {
+            var session = CreateSession();
+            var battle = session.AddBattle("Boss Fight");
+
+            var m1 = session.AddMonster("Monster1", 10);
+            session.AddMonster("Monster2", 10, battleId: battle.BattleId);
+            var m3 = session.AddMonster("Monster3", 10);
+
+            Assert.True(m3.Order > m1.Order);
+        }
+    }
+
+    public class ReorderMonster
+    {
+        [Fact]
+        public void Throws_WhenMonsterNotFound()
+        {
+            var session = CreateSession();
+            Assert.Throws<ArgumentException>(() => session.ReorderMonster(Guid.NewGuid(), 500));
+        }
+
+        [Fact]
+        public void SetsOrder_WhenValid()
+        {
+            var session = CreateSession();
+            var monster = session.AddMonster("Monster1", 10);
+
+            session.ReorderMonster(monster.Id, 42.5);
+
+            Assert.Equal(42.5, monster.Order);
+        }
+    }
+
+    public class MoveMonsterToBattle
+    {
+        [Fact]
+        public void Throws_WhenMonsterNotFound()
+        {
+            var session = CreateSession();
+            var battle = session.AddBattle("Boss Fight");
+            Assert.Throws<ArgumentException>(() => session.MoveMonsterToBattle(Guid.NewGuid(), battle.BattleId, 500));
+        }
+
+        [Fact]
+        public void Throws_WhenTargetBattleNotFound()
+        {
+            var session = CreateSession();
+            var monster = session.AddMonster("Monster1", 10);
+            Assert.Throws<ArgumentException>(() => session.MoveMonsterToBattle(monster.Id, Guid.NewGuid(), 500));
+        }
+
+        [Fact]
+        public void MovesMonsterAndSetsOrder_WhenValid()
+        {
+            var session = CreateSession();
+            var battle = session.AddBattle("Boss Fight");
+            var monster = session.AddMonster("Monster1", 10);
+
+            session.MoveMonsterToBattle(monster.Id, battle.BattleId, 250);
+
+            Assert.Equal(battle.BattleId, monster.BattleId);
+            Assert.Equal(250, monster.Order);
         }
     }
 
