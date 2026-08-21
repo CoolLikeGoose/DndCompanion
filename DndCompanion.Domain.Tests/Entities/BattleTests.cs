@@ -40,6 +40,13 @@ public class BattleTests
             var battle = session.AddBattle("Boss Fight");
             Assert.Contains(session.Battles, b => b.BattleId == battle.BattleId);
         }
+        
+        [Fact]
+        public void Throws_WhenNameTooLong()
+        {
+            var session = CreateSession();
+            Assert.Throws<ArgumentException>(() => session.AddBattle(new string('a', 101)));
+        }
     }
     
     public class BattleOrdering
@@ -118,6 +125,14 @@ public class BattleTests
             var battle = session.AddBattle("Boss Fight");
             battle.Rename("  Final Boss  ");
             Assert.Equal("Final Boss", battle.Name);
+        }
+        
+        [Fact]
+        public void Throws_WhenNameTooLong()
+        {
+            var session = CreateSession();
+            var battle = session.AddBattle("Boss Fight");
+            Assert.Throws<ArgumentException>(() => battle.Rename(new string('a', 101)));
         }
     }
 }

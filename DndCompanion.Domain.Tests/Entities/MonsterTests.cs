@@ -220,6 +220,27 @@ public class MonsterTests
             Assert.Equal(5, monster.CurrentHp);
         }
     }
+    
+    public class RemoveMonster
+    {
+        [Fact]
+        public void Throws_WhenMonsterNotFound()
+        {
+            var session = CreateSession();
+            Assert.Throws<ArgumentException>(() => session.RemoveMonster(Guid.NewGuid()));
+        }
+
+        [Fact]
+        public void RemovesMonster_WhenValid()
+        {
+            var session = CreateSession();
+            var monster = session.AddMonster("Monster1", 10);
+
+            session.RemoveMonster(monster.Id);
+
+            Assert.DoesNotContain(session.Monsters, m => m.Id == monster.Id);
+        }
+    }
 
     public class AddBestiaryEntry()
     {
