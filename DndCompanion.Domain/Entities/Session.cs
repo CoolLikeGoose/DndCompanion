@@ -19,7 +19,7 @@ public class Session
     private readonly List<Monster> _monsters = new();
     public IReadOnlyCollection<Monster> Monsters => _monsters.AsReadOnly();
 
-    public static Session Create(Guid? masterUserId, string masterDisplayName, PinCode? pinCode)
+    public static Session Create(Guid? masterUserId, string masterDisplayName, PinCode? pinCode = null)
     {
         if (string.IsNullOrWhiteSpace(masterDisplayName))
             throw new ArgumentException("Master display name is required", nameof(masterDisplayName));
